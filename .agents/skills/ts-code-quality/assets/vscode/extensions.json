@@ -1,0 +1,13 @@
+{
+  "recommendations": [
+    "dbaeumer.vscode-eslint",
+    "esbenp.prettier-vscode",
+    "bradlc.vscode-tailwindcss",
+    "editorconfig.editorconfig",
+    "streetsidesoftware.code-spell-checker",
+    "unifiedjs.vscode-mdx",
+    "webpro.vscode-knip",
+    "sonarsource.sonarlint-vscode"
+  ],
+  "unwantedRecommendations": []
+}

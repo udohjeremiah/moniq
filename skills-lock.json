@@ -1,0 +1,11 @@
+{
+  "version": 1,
+  "skills": {
+    "ts-code-quality": {
+      "source": "udohjeremiah/skills",
+      "sourceType": "github",
+      "skillPath": "skills/ts-code-quality/SKILL.md",
+      "computedHash": "d9cf1d6e194e36e59394fdf0e5d19bd3c94517669bc1558a1d4d4b05fa5bb408"
+    }
+  }
+}

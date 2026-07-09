@@ -1,0 +1,11 @@
+{
+  "$schema": "https://json.schemastore.org/tsconfig",
+  "display": "Fastify",
+  "extends": "./tsconfig.node.json",
+  "compilerOptions": {
+    "lib": ["ESNext"],
+    "newLine": "lf",
+    "removeComments": true,
+    "target": "ES2023"
+  }
+}

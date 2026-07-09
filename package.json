@@ -1,0 +1,24 @@
+{
+  "name": "moniq",
+  "private": true,
+  "scripts": {
+    "dev": "turbo run dev",
+    "build": "turbo run build",
+    "lint": "turbo run lint",
+    "lint:fix": "turbo run lint:fix",
+    "format": "prettier --check .",
+    "format:fix": "prettier --write .",
+    "check-types": "turbo run check-types",
+    "knip": "knip"
+  },
+  "packageManager": "pnpm@11.4.0",
+  "engines": {
+    "node": ">=24"
+  },
+  "devDependencies": {
+    "knip": "^6.25.0",
+    "prettier": "^3.9.4",
+    "turbo": "^2.10.4",
+    "typescript": "^6.0.3"
+  }
+}

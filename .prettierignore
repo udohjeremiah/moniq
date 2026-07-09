@@ -1,0 +1,4 @@
+.agents
+coverage
+dist
+pnpm-lock.yaml
