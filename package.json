@@ -9,14 +9,26 @@
     "format": "prettier --check .",
     "format:fix": "prettier --write .",
     "check-types": "turbo run check-types",
-    "knip": "knip"
+    "knip": "knip",
+    "prepare": "husky"
   },
   "packageManager": "pnpm@11.4.0",
   "engines": {
     "node": ">=24"
   },
+  "config": {
+    "commitizen": {
+      "path": "cz-conventional-changelog"
+    }
+  },
   "devDependencies": {
+    "@commitlint/cli": "^21.2.1",
+    "@commitlint/config-conventional": "^21.2.0",
+    "commitizen": "^4.3.2",
+    "cz-conventional-changelog": "^3.3.0",
+    "husky": "^9.1.7",
     "knip": "^6.25.0",
+    "lint-staged": "^17.0.8",
     "prettier": "^3.9.4",
     "turbo": "^2.10.4",
     "typescript": "^6.0.3"
