@@ -1,3 +1,1 @@
-import base from "./base.js";
-
-export default [...base];
+export { baseConfig as default } from "./base.js";
