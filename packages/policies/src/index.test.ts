@@ -1,17 +1,17 @@
 import { describe, expect, it } from "vitest";
 
-import { ScriptPolicySchema } from "./scripts.js";
+import { parseScriptPolicy } from "./scripts.js";
 
 const isValid = (): boolean => true;
 
-describe("ScriptPolicySchema", () => {
+describe("parseScriptPolicy", () => {
   it("accepts a minimal policy", () => {
-    const result = ScriptPolicySchema.parse({ required: true });
+    const result = parseScriptPolicy({ required: true });
     expect(result).toEqual({ required: true });
   });
 
   it("accepts a full policy", () => {
-    const result = ScriptPolicySchema.parse({
+    const result = parseScriptPolicy({
       allowCustomCommands: ["apps/*"],
       autofix: true,
       command: "eslint .",
@@ -34,22 +34,22 @@ describe("ScriptPolicySchema", () => {
   });
 
   it("rejects invalid severity", () => {
-    expect(() => ScriptPolicySchema.parse({ severity: "critical" })).toThrow();
+    expect(() => parseScriptPolicy({ severity: "critical" })).toThrow();
   });
 
   it("rejects wrong type for a boolean field", () => {
-    expect(() => ScriptPolicySchema.parse({ required: "yes" })).toThrow();
+    expect(() => parseScriptPolicy({ required: "yes" })).toThrow();
   });
 
   it("accepts RegExp command", () => {
-    const result = ScriptPolicySchema.parse({
+    const result = parseScriptPolicy({
       command: /^eslint\b/,
     });
     expect(result.command).toBeInstanceOf(RegExp);
   });
 
   it("accepts function command", () => {
-    const result = ScriptPolicySchema.parse({
+    const result = parseScriptPolicy({
       command: isValid,
     });
     expect(result.command).toBe(isValid);

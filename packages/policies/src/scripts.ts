@@ -1,4 +1,5 @@
-import { z } from "zod";
+import { Type } from "typebox";
+import { Check, Errors } from "typebox/value";
 
 /**
  * A single script policy configuration.
@@ -142,23 +143,72 @@ export interface ScriptPolicy {
   severity?: "error" | "off" | "warn";
 }
 
-export const CommandSchema = z.union([
-  z.custom<(command: string) => boolean>(
-    (value) => typeof value === "function",
-  ),
-  z.instanceof(RegExp),
-  z.string(),
+const stringArrayType = Type.Array(Type.String());
+
+const severityType = Type.Union([
+  Type.Literal("error"),
+  Type.Literal("off"),
+  Type.Literal("warn"),
 ]);
 
-export const ScriptPolicySchema: z.ZodType<ScriptPolicy> = z.object({
-  allowCustomCommands: z.array(z.string()).optional(),
-  autofix: z.boolean().optional(),
-  command: CommandSchema.optional(),
-  description: z.string().optional(),
-  exclude: z.array(z.string()).optional(),
-  include: z.array(z.string()).optional(),
-  required: z.boolean().optional(),
-  severity: z
-    .union([z.literal("error"), z.literal("off"), z.literal("warn")])
-    .optional(),
+/**
+ * TypeBox schema for ScriptPolicy — validates JSON-compatible fields
+ * (strings, booleans, arrays, enums). The `command` field is validated
+ * at runtime by `parseScriptPolicy`.
+ */
+export const ScriptPolicyType = Type.Object({
+  allowCustomCommands: Type.Optional(stringArrayType),
+  autofix: Type.Optional(Type.Boolean()),
+  command: Type.Optional(Type.Unknown()),
+  description: Type.Optional(Type.String()),
+  exclude: Type.Optional(stringArrayType),
+  include: Type.Optional(stringArrayType),
+  required: Type.Optional(Type.Boolean()),
+  severity: Type.Optional(severityType),
 });
+
+/**
+ * Parses and validates an unknown value as a ScriptPolicy.
+ * Handles the `command` field (function/RegExp/string) which
+ * cannot be expressed in plain JSON Schema.
+ */
+export function parseScriptPolicy(data: unknown): ScriptPolicy {
+  if (!Check(ScriptPolicyType, data)) {
+    const errors = Errors(ScriptPolicyType, data);
+    const first = errors[0];
+
+    throw new TypeError(first?.message ?? "Invalid ScriptPolicy value");
+  }
+
+  const record = data as Record<string, unknown>;
+
+  if (!isCommand(record["command"])) {
+    throw new TypeError(
+      "Invalid command: must be a function, RegExp, or string",
+    );
+  }
+
+  return data as ScriptPolicy;
+}
+
+/**
+ * Parses a single policy or array of policies.
+ */
+export function parseScriptPolicyOrArray(
+  data: unknown,
+): ScriptPolicy | ScriptPolicy[] {
+  return Array.isArray(data)
+    ? data.map((policy) => parseScriptPolicy(policy))
+    : parseScriptPolicy(data);
+}
+
+function isCommand(
+  value: unknown,
+): value is ((command: string) => boolean) | RegExp | string {
+  return (
+    value === undefined ||
+    typeof value === "function" ||
+    value instanceof RegExp ||
+    typeof value === "string"
+  );
+}

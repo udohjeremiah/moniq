@@ -19,7 +19,7 @@
   "dependencies": {
     "@moniq/policies": "workspace:*",
     "jiti": "^2.7.0",
-    "zod": "^4.4.3"
+    "typebox": "^1.3.6"
   },
   "devDependencies": {
     "@moniq/eslint-config": "workspace:*",

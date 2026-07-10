@@ -1,7 +1,12 @@
-import { type ScriptPolicy, ScriptPolicySchema } from "@moniq/policies/scripts";
+import {
+  parseScriptPolicyOrArray,
+  type ScriptPolicy,
+  ScriptPolicyType,
+} from "@moniq/policies/scripts";
 import { createJiti } from "jiti";
 import path from "node:path";
-import { z } from "zod";
+import { Type } from "typebox";
+import { Parse } from "typebox/value";
 
 /**
  * Moniq configuration.
@@ -26,13 +31,15 @@ export interface Config {
   scripts?: Record<string, ScriptPolicy | ScriptPolicy[]>;
 }
 
-const ScriptPolicyOrArraySchema = z.union([
-  ScriptPolicySchema,
-  z.array(ScriptPolicySchema),
+const ScriptPolicyOrArrayType = Type.Union([
+  ScriptPolicyType,
+  Type.Array(ScriptPolicyType),
 ]);
 
-const ConfigSchema: z.ZodType<Config> = z.object({
-  scripts: z.record(z.string(), ScriptPolicyOrArraySchema).optional(),
+const scriptsRecordType = Type.Record(Type.String(), ScriptPolicyOrArrayType);
+
+const ConfigType = Type.Object({
+  scripts: Type.Optional(scriptsRecordType),
 });
 
 /**
@@ -69,7 +76,21 @@ export async function loadConfig(cwd: string): Promise<Config> {
   const module_ = await jiti.import(configPath);
   const raw = (module_ as Record<string, unknown>)["default"] ?? module_;
 
-  return ConfigSchema.parse(raw);
+  const parsed = Parse(ConfigType, raw) as Record<string, unknown>;
+
+  const scripts = parsed["scripts"];
+
+  if (
+    scripts !== undefined &&
+    typeof scripts === "object" &&
+    scripts !== null
+  ) {
+    for (const policyOrArray of Object.values(scripts)) {
+      parseScriptPolicyOrArray(policyOrArray);
+    }
+  }
+
+  return parsed;
 }
 
 async function exists(filePath: string): Promise<boolean> {
