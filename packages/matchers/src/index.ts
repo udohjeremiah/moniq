@@ -1,0 +1,109 @@
+import { parse } from "shell-quote";
+
+const WRAPPER_SEQUENCES = [
+  ["pnpm", "exec"],
+  ["pnpm", "dlx"],
+  ["yarn", "dlx"],
+];
+
+const WRAPPER_SINGLE = new Set(["bunx", "node", "npx", "yarn"]);
+
+/**
+ * Creates a matcher that returns `true` when `command` invokes the binary `name`.
+ *
+ * Strips environment-variable prefixes, package-manager wrappers (`npx`,
+ * `pnpm exec`, `pnpm dlx`, `yarn`, `yarn dlx`, `bunx`, `node`), and leading
+ * flags, then extracts the binary name from the first remaining non-flag
+ * token.
+ *
+ * A leading flag is skipped **without** consuming the following token as its
+ * value, so boolean flags like `npx -y eslint .` resolve the binary correctly.
+ *
+ * **Known limitations**
+ *
+ * - **Flag arguments** — a wrapper flag that takes the binary as its value
+ *   (e.g. `yarn --cwd packages/ui eslint .`) will resolve the flag value
+ *   (`packages/ui`) as the binary instead of `eslint`.  Use an equivalent
+ *   command form that avoids the flag when you need `bin()` to match.
+ * - **Path-like binaries behind `node` flags** — `node --experimental-loader
+ *   ./loader ./bin/tsup` resolves `./loader` as the binary since no flag-value
+ *   skipping is performed.  Use a direct call without flags or a path-relative
+ *   call (`node ./bin/tsup`) for reliable matching.
+ * - **Pipes / sub-shells** — does not inspect the contents of pipe segments,
+ *   quoted strings, or shell constructs (`&&`, `||`, `;`, `$(…)`, etc.).
+ *
+ * @param name - Binary name to match (e.g. `"eslint"`).
+ * @returns Predicate that returns `true` when `command` runs `name`.
+ */
+export function bin(name: string) {
+  return (command: string): boolean => {
+    let tokens = parse(command).filter(
+      (t): t is string => typeof t === "string",
+    );
+
+    // Strip leading env-var assignments (and a `cross-env` prefix).
+    while (tokens[0] === "cross-env" || /^[A-Z_]\w*=/i.test(tokens[0] ?? "")) {
+      tokens = tokens.slice(1);
+    }
+
+    // Strip known wrappers — these can stack (npx, pnpm exec, etc.).
+    ({ remaining: tokens } = stripWrappers(tokens));
+
+    // Skip leading flags (tokens starting with "-").
+    let index = 0;
+
+    while (tokens.slice(index, index + 1)[0]?.startsWith("-")) {
+      index++;
+    }
+
+    const candidate = tokens.slice(index, index + 1)[0];
+    return candidate !== undefined && toBinaryName(candidate) === name;
+  };
+}
+
+function stripWrappers(tokens: string[]): { remaining: string[] } {
+  let remaining = tokens;
+  let isChanged = true;
+
+  while (isChanged) {
+    isChanged = false;
+
+    const seq = WRAPPER_SEQUENCES.find((w) => {
+      const slice = remaining.slice(0, w.length);
+      return (
+        slice.length === w.length &&
+        slice.every((t, index_) => t === w.slice(index_, index_ + 1)[0])
+      );
+    });
+    if (seq) {
+      remaining = remaining.slice(seq.length);
+      isChanged = true;
+    } else if (WRAPPER_SINGLE.has(remaining[0] ?? "")) {
+      remaining = remaining.slice(1);
+      isChanged = true;
+    }
+  }
+
+  return { remaining };
+}
+
+function toBinaryName(token: string): string {
+  if (token.startsWith("@")) {
+    const atIndexes = Array.from(token.matchAll(/@/g), (m) => m.index);
+
+    if (atIndexes.length >= 2) {
+      return token.slice(0, atIndexes[1] ?? token.length);
+    }
+
+    return token;
+  }
+
+  const basename = token.split("/").pop() ?? token;
+  const atIndex = basename.lastIndexOf("@");
+
+  if (atIndex > 0) {
+    return basename.slice(0, atIndex);
+  }
+
+  return basename;
+}

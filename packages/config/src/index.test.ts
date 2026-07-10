@@ -40,7 +40,7 @@ describe("loadConfig", () => {
       [
         "export default {",
         "  scripts: {",
-        '    build: { required: true },',
+        "    build: { required: true },",
         '    lint: { command: "eslint .", required: true },',
         "  },",
         "};",
@@ -67,7 +67,7 @@ describe("loadConfig", () => {
       [
         "export default {",
         "  scripts: {",
-        '    build: { required: true },',
+        "    build: { required: true },",
         "  },",
         "};",
       ].join("\n"),
