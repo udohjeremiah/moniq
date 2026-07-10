@@ -4,7 +4,7 @@
   "type": "module",
   "exports": {
     "./scripts": {
-      "types": "./dist/scripts.d.ts",
+      "types": "./src/scripts.ts",
       "import": "./dist/scripts.js"
     }
   },
