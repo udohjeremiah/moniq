@@ -9,6 +9,7 @@
     "format": "prettier --check .",
     "format:fix": "prettier --write .",
     "check-types": "turbo run check-types",
+    "test": "turbo run test",
     "knip": "knip",
     "prepare": "husky"
   },
