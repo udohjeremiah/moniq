@@ -56,9 +56,6 @@ importers:
       cac:
         specifier: ^7.0.0
         version: 7.0.0
-      yoctocolors:
-        specifier: ^2.1.2
-        version: 2.1.2
     devDependencies:
       '@moniq/eslint-config':
         specifier: workspace:*
@@ -189,12 +186,14 @@ importers:
         specifier: ^8
         version: 8.63.0(eslint@10.6.0(jiti@2.7.0))(typescript@6.0.3)
 
-  packages/matchers:
-    dependencies:
-      shell-quote:
-        specifier: ^1.9.0
-        version: 1.9.0
+  packages/moniq:
     devDependencies:
+      '@moniq/cli':
+        specifier: workspace:*
+        version: link:../cli
+      '@moniq/config':
+        specifier: workspace:*
+        version: link:../config
       '@moniq/eslint-config':
         specifier: workspace:*
         version: link:../eslint-config
@@ -207,6 +206,9 @@ importers:
       eslint:
         specifier: ^10.6.0
         version: 10.6.0(jiti@2.7.0)
+      shell-quote:
+        specifier: ^1.9.0
+        version: 1.9.0
       tsdown:
         specifier: ^0.22.4
         version: 0.22.4(oxc-resolver@11.21.3)(typescript@6.0.3)
@@ -3028,10 +3030,6 @@ packages:
     resolution: {integrity: sha512-rVksvsnNCdJ/ohGc6xgPwyN8eheCxsiLM8mxuE/t/mOVqJewPuO1miLpTHQiRgTKCLexL4MeAFVagts7HmNZ2Q==}
     engines: {node: '>=10'}
 
-  yoctocolors@2.1.2:
-    resolution: {integrity: sha512-CzhO+pFNo8ajLM2d2IW/R93ipy99LWjtwblvC1RsoSUMZgyLbYFr221TnSNT7GjGdYui6P459mw9JH/g/zW2ug==}
-    engines: {node: '>=18'}
-
   yuku-ast@0.1.7:
     resolution: {integrity: sha512-2RiMEWv500TixY5rJy6OZd4fSy9WYZKWh6gGbIJ7y7vAGcuCugWOWwOLGaQcRZrXcPUfqtLtvpaJ3SdXtWlhKA==}
 
@@ -5661,8 +5659,6 @@ snapshots:
       yargs-parser: 22.0.0
 
   yocto-queue@0.1.0: {}
-
-  yoctocolors@2.1.2: {}
 
   yuku-ast@0.1.7:
     dependencies:
