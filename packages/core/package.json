@@ -18,8 +18,6 @@
   },
   "dependencies": {
     "@moniq/config": "workspace:*",
-    "@moniq/parser": "workspace:*",
-    "@moniq/policies": "workspace:*",
     "@moniq/workspace": "workspace:*",
     "wildcard-match": "^5.1.4"
   },

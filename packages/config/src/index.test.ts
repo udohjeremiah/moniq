@@ -17,9 +17,10 @@ function createTemporaryDirectory(): Promise<string> {
 async function writeConfig(
   directory: string,
   content: string,
+  extension = ".ts",
 ): Promise<string> {
   const { writeFile } = await import("node:fs/promises");
-  const configPath = path.join(directory, "moniq.config.ts");
+  const configPath = path.join(directory, `moniq.config${extension}`);
   await writeFile(configPath, content);
   return configPath;
 }
@@ -83,11 +84,70 @@ describe("loadConfig", () => {
     await rm(directory, { recursive: true });
   });
 
+  it("loads a .js config file", async () => {
+    const directory = await createTemporaryDirectory();
+    await writeConfig(
+      directory,
+      [
+        "export default {",
+        "  scripts: {",
+        '    dev: { command: "vitest" },',
+        "  },",
+        "};",
+      ].join("\n"),
+      ".js",
+    );
+
+    const config = await loadConfig(directory);
+
+    expect(config).toEqual({
+      scripts: {
+        dev: { command: "vitest" },
+      },
+    });
+    await rm(directory, { recursive: true });
+  });
+
+  it("loads a .mjs config file", async () => {
+    const directory = await createTemporaryDirectory();
+    await writeConfig(
+      directory,
+      [
+        "export default {",
+        "  scripts: {",
+        '    dev: { command: "vitest" },',
+        "  },",
+        "};",
+      ].join("\n"),
+      ".mjs",
+    );
+
+    const config = await loadConfig(directory);
+
+    expect(config).toEqual({
+      scripts: {
+        dev: { command: "vitest" },
+      },
+    });
+    await rm(directory, { recursive: true });
+  });
+
+  it("throws when more than one config file exists", async () => {
+    const directory = await createTemporaryDirectory();
+    await writeConfig(directory, "export default {};", ".ts");
+    await writeConfig(directory, "export default {};", ".js");
+
+    await expect(loadConfig(directory)).rejects.toThrow(
+      /Multiple moniq\.config files found/,
+    );
+    await rm(directory, { recursive: true });
+  });
+
   it("throws when no config file is found", async () => {
     const directory = await createTemporaryDirectory();
 
     await expect(loadConfig(directory)).rejects.toThrow(
-      /No moniq\.config\.ts found/,
+      /No moniq\.config file found/,
     );
     await rm(directory, { recursive: true });
   });

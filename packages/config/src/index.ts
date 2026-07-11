@@ -1,35 +1,17 @@
-import {
-  parseScriptPolicyOrArray,
-  type ScriptPolicy,
-  ScriptPolicyType,
-} from "@moniq/policies/scripts";
 import { createJiti } from "jiti";
 import path from "node:path";
 import { Type } from "typebox";
 import { Parse } from "typebox/value";
 
-/**
- * Moniq configuration.
- */
+import { parseScriptPolicyOrArray, type ScriptPolicy, ScriptPolicyType } from "./scripts.js";
+
+/** Moniq configuration. */
 export interface Config {
-  /**
-   * Policies keyed by script name.
-   *
-   * A single script name may map to multiple policies
-   * to express different rules for different zones of
-   * the workspace (e.g. `apps/*` vs `packages/*`).
-   *
-   * When multiple policies are provided for a script,
-   * they are evaluated in array order for each package.
-   * The first policy whose `include`/`exclude` matches
-   * the package wins.
-   *
-   * Overlapping policies are a configuration error and
-   * should be rewritten so that only one policy matches
-   * a package.
-   */
+  /** Policies keyed by script name. Maps script names to one or more policies (first match wins). */
   scripts?: Record<string, ScriptPolicy | ScriptPolicy[]>;
 }
+
+export type { ScriptPolicy } from "./scripts.js";
 
 const ScriptPolicyOrArrayType = Type.Union([
   ScriptPolicyType,
@@ -42,33 +24,26 @@ const ConfigType = Type.Object({
   scripts: Type.Optional(scriptsRecordType),
 });
 
-/**
- * Identity helper for type inference.
- *
- * @param config - The configuration object.
- * @returns The same configuration object, typed as {@link Config}.
- */
+/** Identity helper for type inference. Use in your `moniq.config.ts` to get full type safety. */
 export function defineConfig(config: Config): Config {
   return config;
 }
 
-/**
- * Loads a Moniq configuration from the nearest `moniq.config.ts` file.
- *
- * Searches from `cwd` upward through parent directories until a
- * `moniq.config.ts` file is found. The file is loaded at runtime via
- * `jiti` and validated against a Zod schema.
- *
- * @param cwd - The directory to start searching from.
- * @returns The validated configuration.
- * @throws If no configuration file is found or the configuration is invalid.
- */
+const CONFIG_FILENAMES = [
+  "moniq.config.ts",
+  "moniq.config.js",
+  "moniq.config.mjs",
+  "moniq.config.cjs",
+  "moniq.config.mts",
+  "moniq.config.cts",
+];
+
 export async function loadConfig(cwd: string): Promise<Config> {
   const configPath = await findConfig(cwd);
 
   if (configPath === undefined) {
     throw new Error(
-      `No moniq.config.ts found in or above ${cwd}. Create one or run \`moniq init\` to generate a starter config.`,
+      `No moniq.config file found in or above ${cwd}. Create one or run \`moniq init\` to generate a starter config.`,
     );
   }
 
@@ -103,10 +78,24 @@ async function findConfig(startDirectory: string): Promise<string | undefined> {
   let isRootReached = false;
 
   while (!isRootReached) {
-    const configPath = path.join(directory, "moniq.config.ts");
+    const found: string[] = [];
 
-    if (await exists(configPath)) {
-      return configPath;
+    for (const name of CONFIG_FILENAMES) {
+      if (await exists(path.join(directory, name))) {
+        found.push(name);
+      }
+    }
+
+    if (found.length > 1) {
+      throw new Error(
+        `Multiple moniq.config files found in ${directory}: ${found.join(", ")}. Remove all but one.`,
+      );
+    }
+
+    if (found.length === 1) {
+      const name = found[0];
+      if (name === undefined) continue;
+      return path.join(directory, name);
     }
 
     const parent = path.dirname(directory);

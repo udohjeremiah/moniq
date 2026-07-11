@@ -11,26 +11,11 @@ const WRAPPER_SINGLE = new Set(["bunx", "node", "npx", "yarn"]);
 /**
  * Creates a matcher that returns `true` when `command` invokes the binary `name`.
  *
- * Strips environment-variable prefixes, package-manager wrappers (`npx`,
- * `pnpm exec`, `pnpm dlx`, `yarn`, `yarn dlx`, `bunx`, `node`), and leading
- * flags, then extracts the binary name from the first remaining non-flag
- * token.
+ * Strips env-var prefixes, package-manager wrappers (`npx`, `pnpm exec`, etc.),
+ * and leading flags to extract the binary name from the first non-flag token.
  *
- * A leading flag is skipped **without** consuming the following token as its
- * value, so boolean flags like `npx -y eslint .` resolve the binary correctly.
- *
- * **Known limitations**
- *
- * - **Flag arguments** — a wrapper flag that takes the binary as its value
- *   (e.g. `yarn --cwd packages/ui eslint .`) will resolve the flag value
- *   (`packages/ui`) as the binary instead of `eslint`.  Use an equivalent
- *   command form that avoids the flag when you need `bin()` to match.
- * - **Path-like binaries behind `node` flags** — `node --experimental-loader
- *   ./loader ./bin/tsup` resolves `./loader` as the binary since no flag-value
- *   skipping is performed.  Use a direct call without flags or a path-relative
- *   call (`node ./bin/tsup`) for reliable matching.
- * - **Pipes / sub-shells** — does not inspect the contents of pipe segments,
- *   quoted strings, or shell constructs (`&&`, `||`, `;`, `$(…)`, etc.).
+ * **Limitations** — flag arguments (e.g. `yarn --cwd pkg bin`), path-like
+ * binaries behind `node` flags, and sub-shells are not supported.
  *
  * @param name - Binary name to match (e.g. `"eslint"`).
  * @returns Predicate that returns `true` when `command` runs `name`.

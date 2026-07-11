@@ -1,28 +1,10 @@
-import { getScript, readPackageJson } from "@moniq/parser";
-import { type ScriptPolicy } from "@moniq/policies/scripts";
-import { type Package } from "@moniq/workspace";
+import { type ScriptPolicy } from "@moniq/config";
+import { getScript, type Package, readPackageJson } from "@moniq/workspace";
 import path from "node:path";
 import wcmatch from "wildcard-match";
 
 import { type Diagnostic } from "./index.js";
 
-/**
- * Resolves all script policies against every package in the workspace.
- *
- * For each entry in `scriptsConfig`:
- * 1. Resolves `include`/`exclude` globs against each package path (relative
- *    to `root`).
- * 2. Picks the first matching policy when an array is provided.
- * 3. Skips policies with `severity: "off"`.
- * 4. Checks `required` — missing required scripts produce a diagnostic.
- * 5. Checks `command` — mismatched commands produce a diagnostic (unless
- *    exempted by `allowCustomCommands`).
- *
- * @param scriptsConfig - The `scripts` field from a Moniq configuration.
- * @param root - Absolute path to the workspace root.
- * @param packages - Discovered workspace packages.
- * @returns Array of diagnostics (one per violation).
- */
 export async function resolveScriptPolicies(
   scriptsConfig: Record<string, ScriptPolicy | ScriptPolicy[]> | undefined,
   root: string,
