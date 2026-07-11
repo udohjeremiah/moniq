@@ -3,7 +3,11 @@ import path from "node:path";
 import { Type } from "typebox";
 import { Parse } from "typebox/value";
 
-import { parseScriptPolicyOrArray, type ScriptPolicy, ScriptPolicyType } from "./scripts.js";
+import {
+  parseScriptPolicyOrArray,
+  type ScriptPolicy,
+  ScriptPolicyType,
+} from "./scripts.js";
 
 /** Moniq configuration. */
 export interface Config {
