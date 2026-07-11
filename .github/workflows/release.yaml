@@ -26,6 +26,8 @@ jobs:
       - run: pnpm install
       - run: pnpm build
       - uses: changesets/action@v1
+        env:
+          HUSKY: 0
         with:
           publish: pnpm changeset publish
           title: "chore(release): version packages"
