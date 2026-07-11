@@ -2,8 +2,8 @@ import node from "eslint-plugin-n";
 
 import { baseConfig } from "./base.js";
 
+/** @type {import("eslint").Linter.Config[]} */
 export const nodeConfig = [
-  // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
   ...baseConfig,
   node.configs["flat/recommended-module"],
   {

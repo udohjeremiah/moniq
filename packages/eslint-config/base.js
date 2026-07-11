@@ -14,6 +14,7 @@ import unusedImports from "eslint-plugin-unused-imports";
 import { globalIgnores } from "eslint/config";
 import * as tseslint from "typescript-eslint";
 
+/** @type {import("eslint").Linter.Config[]} */
 export const baseConfig = [
   js.configs.recommended,
   ...tseslint.configs.strictTypeChecked,
@@ -23,6 +24,7 @@ export const baseConfig = [
   importX.flatConfigs.typescript,
   perfectionist.configs["recommended-natural"],
   security.configs.recommended,
+  // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
   promise.configs["flat/recommended"],
   regexp.configs.recommended,
   sonarjs.configs.recommended,
