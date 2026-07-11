@@ -16,7 +16,7 @@ jobs:
       - uses: actions/setup-node@v6
         with:
           node-version: ">=24"
-          cache: "pnpm"
+          cache: pnpm
       - run: pnpm install
       - run: pnpm run lint
 
@@ -28,7 +28,7 @@ jobs:
       - uses: actions/setup-node@v6
         with:
           node-version: ">=24"
-          cache: "pnpm"
+          cache: pnpm
       - run: pnpm install
       - run: pnpm run format
 
@@ -40,7 +40,7 @@ jobs:
       - uses: actions/setup-node@v6
         with:
           node-version: ">=24"
-          cache: "pnpm"
+          cache: pnpm
       - run: pnpm install
       - run: pnpm run check-types
 
@@ -52,7 +52,7 @@ jobs:
       - uses: actions/setup-node@v6
         with:
           node-version: ">=24"
-          cache: "pnpm"
+          cache: pnpm
       - run: pnpm install
       - run: pnpm run knip
 
@@ -64,7 +64,7 @@ jobs:
       - uses: actions/setup-node@v6
         with:
           node-version: ">=24"
-          cache: "pnpm"
+          cache: pnpm
       - run: pnpm install
       - run: pnpm run build
 
