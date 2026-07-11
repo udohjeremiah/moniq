@@ -72,6 +72,35 @@ describe("formatPretty", () => {
   });
 });
 
+describe("formatPretty dry-run", () => {
+  it("shows Would fix: instead of Fix: when isDryRun is true", () => {
+    const d = makeDiagnostic({ fix: "tsup" });
+    const result = formatDiagnostics([d], { format: "pretty", isDryRun: true });
+    expect(result).toContain("Would fix:");
+    expect(result).not.toContain("Fix:");
+    expect(result).toContain("tsup");
+  });
+
+  it("includes dry-run summary line when fixes are available", () => {
+    const result = formatDiagnostics(
+      [
+        makeDiagnostic({ fix: "eslint .", severity: "error" }),
+        makeDiagnostic({ fix: "tsup", severity: "error" }),
+      ],
+      { format: "pretty", isDryRun: true },
+    );
+    expect(result).toContain("Dry-run:");
+    expect(result).toContain("2 fix(es)");
+  });
+
+  it("shows Fix: normally when isDryRun is not set", () => {
+    const d = makeDiagnostic({ fix: "tsup" });
+    const result = formatDiagnostics([d], { format: "pretty" });
+    expect(result).toContain("Fix:");
+    expect(result).not.toContain("Would fix:");
+  });
+});
+
 describe("formatJson", () => {
   it("returns valid JSON array", () => {
     const result = formatDiagnostics([makeDiagnostic()], { format: "json" });

@@ -26,15 +26,17 @@ cli
 
 cli
   .command("fix", "Run policy checks and apply autofixes")
+  .option("--dry-run", "Preview autofixes without writing to files")
   .option("--format <fmt>", "Output format: pretty or json", {
     default: "pretty",
   })
   .action(async (options: Record<string, unknown>) => {
+    const isDryRun = options["dryRun"] === true;
     const fmt =
       typeof options["format"] === "string" ? options["format"] : "pretty";
 
     try {
-      await check({ fix: true, format: fmt as Format });
+      await check({ fix: true, format: fmt as Format, isDryRun });
     } catch (error) {
       console.error(String(error));
       process.exitCode = 1;

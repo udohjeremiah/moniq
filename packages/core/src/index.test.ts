@@ -73,6 +73,7 @@ describe("resolve", () => {
         message: 'Missing required script "build"',
         packageName: "root",
         packagePath: path.join(root, "."),
+        scriptName: "build",
         severity: "error",
       },
     ]);
@@ -99,6 +100,7 @@ describe("resolve", () => {
         message: 'Unexpected command for script "build"',
         packageName: "root",
         packagePath: path.join(root, "."),
+        scriptName: "build",
         severity: "error",
       },
     ]);

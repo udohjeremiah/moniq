@@ -117,6 +117,7 @@ async function resolvePolicy(
       message: `Missing required script "${scriptName}"`,
       packageName: packageDisplayName,
       packagePath: package_.path,
+      scriptName,
       severity,
     });
     return;
@@ -153,6 +154,7 @@ async function resolvePolicy(
     message: `Unexpected command for script "${scriptName}"`,
     packageName: packageDisplayName,
     packagePath: package_.path,
+    scriptName,
     severity,
   });
 }

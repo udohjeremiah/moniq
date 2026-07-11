@@ -5,6 +5,7 @@ export type Format = "json" | "pretty";
 
 export interface FormatOptions {
   format?: Format;
+  isDryRun?: boolean;
 }
 
 export function formatDiagnostics(
@@ -17,14 +18,14 @@ export function formatDiagnostics(
     return formatJson(diagnostics);
   }
 
-  return formatPretty(diagnostics);
+  return formatPretty(diagnostics, options?.isDryRun);
 }
 
 function formatJson(diagnostics: Diagnostic[]): string {
   return `${JSON.stringify(diagnostics, undefined, 2)}\n`;
 }
 
-function formatPretty(diagnostics: Diagnostic[]): string {
+function formatPretty(diagnostics: Diagnostic[], isDryRun?: boolean): string {
   if (diagnostics.length === 0) {
     return green(bold("✅ No issues found."));
   }
@@ -45,7 +46,7 @@ function formatPretty(diagnostics: Diagnostic[]): string {
     lines.push("", `📦 ${cyan(bold(packageName))}`);
 
     for (const d of diags) {
-      pushDiagnostic(lines, d);
+      pushDiagnostic(lines, d, isDryRun);
     }
   }
 
@@ -60,10 +61,24 @@ function formatPretty(diagnostics: Diagnostic[]): string {
   const summaryLine = `📋 Found ${String(diagnostics.length)} issue(s) — ${summary.length > 0 ? summary : "all clear"}`;
   lines.push("", dim(summaryLine));
 
+  if (isDryRun) {
+    const fixableCount = diagnostics.filter(
+      (d) => d.fix && d.severity !== "off",
+    ).length;
+    lines.push(
+      "",
+      dim(`🔮 Dry-run: ${String(fixableCount)} fix(es) available`),
+    );
+  }
+
   return lines.join("\n");
 }
 
-function pushDiagnostic(lines: string[], d: Diagnostic): void {
+function pushDiagnostic(
+  lines: string[],
+  d: Diagnostic,
+  isDryRun?: boolean,
+): void {
   const badge = severityBadge(d.severity);
   const emoji = severityEmoji(d.severity);
 
@@ -81,7 +96,9 @@ function pushDiagnostic(lines: string[], d: Diagnostic): void {
   }
 
   if (d.fix) {
-    lines.push(`         🔧 ${dim("Fix:")} ${d.fix}`);
+    const label = dim(isDryRun ? "Would fix:" : "Fix:");
+    const icon = isDryRun ? "🔮" : "🔧";
+    lines.push(`         ${icon} ${label} ${d.fix}`);
   }
 }
 

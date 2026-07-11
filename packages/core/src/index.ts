@@ -10,6 +10,7 @@ export interface Diagnostic {
   message: string;
   packageName: string;
   packagePath: string;
+  scriptName?: string;
   severity: "error" | "off" | "warn";
 }
 
