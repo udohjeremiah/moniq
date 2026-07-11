@@ -1,5 +1,5 @@
 {
-  "name": "moniq",
+  "name": "@udohjeremiah/moniq",
   "version": "0.1.0",
   "description": "Policy-driven workspace linter for JavaScript/TypeScript monorepos",
   "type": "module",

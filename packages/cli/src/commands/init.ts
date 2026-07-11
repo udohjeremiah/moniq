@@ -6,7 +6,7 @@ import { renderBanner } from "../banner.js";
 
 const SUPPORTED_LANGS = ["ts", "js", "mjs", "cjs", "mts", "cts"];
 
-const STARTER_CONFIG = `import { defineConfig } from "moniq";
+const STARTER_CONFIG = `import { defineConfig } from "@udohjeremiah/moniq";
 
 export default defineConfig({
   scripts: {
