@@ -1,5 +1,11 @@
 # moniq
 
+## 0.1.1
+
+### Patch Changes
+
+- 922028a: feat: include MIT license in published package
+
 ## 0.1.0
 
 ### Minor Changes
