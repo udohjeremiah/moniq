@@ -1,0 +1,40 @@
+{
+  "name": "@moniq/cli",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": {
+      "types": "./src/index.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "bin": {
+    "moniq": "./dist/index.js"
+  },
+  "engines": {
+    "node": ">=24"
+  },
+  "scripts": {
+    "dev": "tsdown --watch",
+    "build": "tsdown",
+    "lint": "eslint . --max-warnings=0",
+    "lint:fix": "eslint --fix .",
+    "check-types": "tsc --noEmit",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@moniq/config": "workspace:*",
+    "@moniq/core": "workspace:*",
+    "@moniq/workspace": "workspace:*",
+    "cac": "^7.0.0",
+    "yoctocolors": "^2.1.2"
+  },
+  "devDependencies": {
+    "@moniq/eslint-config": "workspace:*",
+    "@moniq/typescript-config": "workspace:*",
+    "@types/node": "^26.1.1",
+    "eslint": "^10.6.0",
+    "tsdown": "^0.22.4",
+    "vitest": "^4.1.10"
+  }
+}
