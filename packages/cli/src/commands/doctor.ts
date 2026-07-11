@@ -1,6 +1,6 @@
 import { type Config, loadConfig } from "@moniq/config";
 import { discoverWorkspace } from "@moniq/workspace";
-import { bold, cyan, dim, green, red, yellow } from "yoctocolors";
+import { styleText } from "node:util";
 
 interface DoctorIssue {
   message: string;
@@ -53,18 +53,22 @@ export async function doctor(): Promise<void> {
 
   // Report
   console.log();
-  console.log(`  ${bold("🏥 Configuration Doctor")}`);
+  console.log(`  ${styleText("bold", "🏥 Configuration Doctor")}`);
   console.log();
 
   if (issues.length === 0) {
-    console.log(`  ${green(bold("✅ Everything looks good!"))}`);
+    console.log(
+      `  ${styleText(["bold", "green"], "✅ Everything looks good!")}`,
+    );
     return;
   }
 
   for (const issue of issues) {
     const icon = issue.severity === "error" ? "❌" : "⚠️ ";
     const label =
-      issue.severity === "error" ? red(bold("ERROR")) : yellow(bold("WARN"));
+      issue.severity === "error"
+        ? styleText(["bold", "red"], "ERROR")
+        : styleText(["bold", "yellow"], "WARN");
     console.log(`  ${icon} ${label} ${issue.message}`);
   }
 
@@ -76,14 +80,14 @@ export async function doctor(): Promise<void> {
   ).length;
   const errorText = `${String(errorCount)} error(s)`;
   const warningText = `${String(warningCount)} warning(s)`;
-  const summary = dim(`Found ${errorText}, ${warningText}`);
+  const summary = styleText("dim", `Found ${errorText}, ${warningText}`);
 
   console.log();
   console.log(`  ${summary}`);
 
   if (errorCount > 0) {
-    const tip = cyan(bold("💡 Tip:"));
-    const hint = dim("moniq init");
+    const tip = styleText(["bold", "cyan"], "💡 Tip:");
+    const hint = styleText("dim", "moniq init");
     console.log();
     console.log(`  ${tip} Run ${hint} to scaffold a starter configuration.`);
   }

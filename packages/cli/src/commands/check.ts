@@ -1,7 +1,7 @@
 import { loadConfig } from "@moniq/config";
 import { resolve } from "@moniq/core";
 import { discoverWorkspace } from "@moniq/workspace";
-import { bold, dim, green } from "yoctocolors";
+import { styleText } from "node:util";
 
 import { type Format, formatDiagnostics } from "../format.js";
 import { applyScriptFixes, type FixSummary } from "../scripts.js";
@@ -54,10 +54,10 @@ export async function check(options: CheckOptions): Promise<void> {
   if (fixSummary) {
     if (fixSummary.isDryRun) {
       const message = `🔮 Dry-run: ${String(fixSummary.fixed)} fix(es) available, ${String(fixSummary.errors)} error(s)`;
-      console.log(dim(message));
+      console.log(styleText("dim", message));
     } else {
       const message = `✅ Fixed ${String(fixSummary.fixed)} issue(s) across ${String(fixSummary.packageCount)} package(s)`;
-      console.log(green(bold(message)));
+      console.log(styleText(["bold", "green"], message));
     }
   }
 }

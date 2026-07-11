@@ -1,5 +1,5 @@
 import { type Diagnostic } from "@moniq/core";
-import { bold, cyan, dim, gray, green, red, yellow } from "yoctocolors";
+import { styleText } from "node:util";
 
 export type Format = "json" | "pretty";
 
@@ -27,7 +27,7 @@ function formatJson(diagnostics: Diagnostic[]): string {
 
 function formatPretty(diagnostics: Diagnostic[], isDryRun?: boolean): string {
   if (diagnostics.length === 0) {
-    return green(bold("✅ No issues found."));
+    return styleText(["bold", "green"], "✅ No issues found.");
   }
 
   const lines: string[] = [];
@@ -43,7 +43,7 @@ function formatPretty(diagnostics: Diagnostic[], isDryRun?: boolean): string {
   }
 
   for (const [packageName, diags] of byPackage) {
-    lines.push("", `📦 ${cyan(bold(packageName))}`);
+    lines.push("", `📦 ${styleText(["bold", "cyan"], packageName)}`);
 
     for (const d of diags) {
       pushDiagnostic(lines, d, isDryRun);
@@ -53,13 +53,14 @@ function formatPretty(diagnostics: Diagnostic[], isDryRun?: boolean): string {
   const errorCount = diagnostics.filter((d) => d.severity === "error").length;
   const warningCount = diagnostics.filter((d) => d.severity === "warn").length;
   const countParts: string[] = [];
-  if (errorCount > 0) countParts.push(red(`${String(errorCount)} error(s)`));
+  if (errorCount > 0)
+    countParts.push(styleText("red", `${String(errorCount)} error(s)`));
   if (warningCount > 0)
-    countParts.push(yellow(`${String(warningCount)} warning(s)`));
+    countParts.push(styleText("yellow", `${String(warningCount)} warning(s)`));
   const summary = countParts.join(", ");
 
   const summaryLine = `📋 Found ${String(diagnostics.length)} issue(s) — ${summary.length > 0 ? summary : "all clear"}`;
-  lines.push("", dim(summaryLine));
+  lines.push("", styleText("dim", summaryLine));
 
   if (isDryRun) {
     const fixableCount = diagnostics.filter(
@@ -67,7 +68,7 @@ function formatPretty(diagnostics: Diagnostic[], isDryRun?: boolean): string {
     ).length;
     lines.push(
       "",
-      dim(`🔮 Dry-run: ${String(fixableCount)} fix(es) available`),
+      styleText("dim", `🔮 Dry-run: ${String(fixableCount)} fix(es) available`),
     );
   }
 
@@ -86,17 +87,21 @@ function pushDiagnostic(
 
   if (d.expected && d.actual) {
     lines.push(
-      `         ${dim("Expected:")} ${cyan(d.expected)}`,
-      `         ${dim("Actual:")}   ${red(d.actual)}`,
+      `         ${styleText("dim", "Expected:")} ${styleText("cyan", d.expected)}`,
+      `         ${styleText("dim", "Actual:")}   ${styleText("red", d.actual)}`,
     );
   } else if (d.expected) {
-    lines.push(`         ${dim("Expected:")} ${cyan(d.expected)}`);
+    lines.push(
+      `         ${styleText("dim", "Expected:")} ${styleText("cyan", d.expected)}`,
+    );
   } else if (d.actual) {
-    lines.push(`         ${dim("Actual:")}   ${red(d.actual)}`);
+    lines.push(
+      `         ${styleText("dim", "Actual:")}   ${styleText("red", d.actual)}`,
+    );
   }
 
   if (d.fix) {
-    const label = dim(isDryRun ? "Would fix:" : "Fix:");
+    const label = styleText("dim", isDryRun ? "Would fix:" : "Fix:");
     const icon = isDryRun ? "🔮" : "🔧";
     lines.push(`         ${icon} ${label} ${d.fix}`);
   }
@@ -104,12 +109,12 @@ function pushDiagnostic(
 
 function severityBadge(severity: Diagnostic["severity"]): string {
   if (severity === "error") {
-    return red(bold("ERROR"));
+    return styleText(["bold", "red"], "ERROR");
   }
   if (severity === "warn") {
-    return yellow(bold("WARN"));
+    return styleText(["bold", "yellow"], "WARN");
   }
-  return gray("OFF");
+  return styleText("gray", "OFF");
 }
 
 function severityEmoji(severity: Diagnostic["severity"]): string {

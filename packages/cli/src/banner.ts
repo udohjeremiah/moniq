@@ -1,11 +1,11 @@
-import { blue, cyan, green, magenta, yellow } from "yoctocolors";
+import { styleText } from "node:util";
 
 const colorFns: ((s: string) => string)[] = [
-  cyan,
-  magenta,
-  green,
-  yellow,
-  blue,
+  (s) => styleText("cyan", s),
+  (s) => styleText("magenta", s),
+  (s) => styleText("green", s),
+  (s) => styleText("yellow", s),
+  (s) => styleText("blue", s),
 ];
 
 const letterRows: string[][] = [
