@@ -117,10 +117,10 @@ function severityBadge(severity: Diagnostic["severity"]) {
 
 function severityIcon(severity: Diagnostic["severity"]) {
   if (severity === "error") {
-    return "✘";
+    return styleText(["bold", "red"], "✘");
   }
   if (severity === "warn") {
-    return "⚠";
+    return styleText(["bold", "yellow"], "⚠");
   }
   return " ";
 }

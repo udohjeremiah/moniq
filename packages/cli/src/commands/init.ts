@@ -145,12 +145,14 @@ export async function init(options: InitOptions): Promise<void> {
   // Install package as devDependency (skip in test mode)
   if (!_cwd) {
     const stopSpinner = startSpinner(
-      "Installing @udohjeremiah/moniq as devDependency...",
+      `Installing ${styleText("cyan", "@udohjeremiah/moniq")} as devDependency...`,
     );
     try {
       await installPackage(pm, cwd, options.version);
       stopSpinner();
-      console.log(`  ✔ Installed @udohjeremiah/moniq as devDependency`);
+      console.log(
+        `  ${styleText(["bold", "green"], "✔ Installed")} ${styleText("cyan", "@udohjeremiah/moniq")} ${styleText(["bold", "green"], "as devDependency")}`,
+      );
     } catch (error) {
       stopSpinner();
       const errorMessage = `Installation failed: ${String(error)}`;
@@ -264,7 +266,7 @@ function startSpinner(text: string): () => void {
   let index = 0;
   const id = setInterval(() => {
     const frame = frames.at(index) ?? "";
-    const styled = styleText("dim", `${frame} ${text}`);
+    const styled = `${styleText("dim", frame)} ${text}`;
     process.stdout.write(`\r  ${styled}`);
     index = (index + 1) % frames.length;
   }, 80);

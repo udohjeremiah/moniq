@@ -41,9 +41,8 @@ export async function check(options: CheckOptions): Promise<void> {
 
   if (options.format !== "json") {
     console.log(
-      `  ${styleText("cyan", "ℹ")} Scanned ${String(packages.length)} package(s)`,
+      `${styleText("cyan", "ℹ")} Scanned ${String(packages.length)} package(s)`,
     );
-    console.log();
   }
 
   console.log(
