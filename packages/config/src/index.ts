@@ -1,4 +1,3 @@
-import { createJiti } from "jiti";
 import path from "node:path";
 import { Type } from "typebox";
 import { Parse } from "typebox/value";
@@ -28,7 +27,7 @@ const ConfigType = Type.Object({
   scripts: Type.Optional(scriptsRecordType),
 });
 
-/** Identity helper for type inference. Use in your `moniq.config.ts` to get full type safety. */
+/** Identity helper for type inference. Use in your `moniq.config` file to get full type safety. */
 export function defineConfig(config: Config): Config {
   return config;
 }
@@ -51,9 +50,8 @@ export async function loadConfig(cwd: string): Promise<Config> {
     );
   }
 
-  const jiti = createJiti(import.meta.url, {});
-  const module_ = await jiti.import(configPath);
-  const raw = (module_ as Record<string, unknown>)["default"] ?? module_;
+  const module_ = (await import(configPath)) as Record<string, unknown>;
+  const raw = module_["default"] ?? module_;
 
   const parsed = Parse(ConfigType, raw) as Record<string, unknown>;
 

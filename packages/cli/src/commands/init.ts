@@ -11,7 +11,6 @@ import { createInterface } from "node:readline/promises";
 import { styleText } from "node:util";
 
 import { renderBanner } from "../banner.js";
-import { doctor } from "./doctor.js";
 
 const SUPPORTED_LANGS = ["ts", "js", "mjs", "cjs", "mts", "cts"];
 
@@ -41,11 +40,12 @@ export interface InitOptions {
 export async function detectLang(cwd: string, packageJson: PackageJson) {
   const rawDependencies = packageJson["dependencies"];
   const rawDevelopmentDependencies = packageJson["devDependencies"];
+  const isModule = packageJson["type"] === "module";
 
   const { access } = await import("node:fs/promises");
   try {
     await access(path.join(cwd, "tsconfig.json"));
-    return "ts";
+    return isModule ? "ts" : "mts";
   } catch {
     // no tsconfig
   }
@@ -55,7 +55,7 @@ export async function detectLang(cwd: string, packageJson: PackageJson) {
     rawDependencies !== null &&
     Object.hasOwn(rawDependencies, "typescript")
   ) {
-    return "ts";
+    return isModule ? "ts" : "mts";
   }
 
   if (
@@ -63,10 +63,10 @@ export async function detectLang(cwd: string, packageJson: PackageJson) {
     rawDevelopmentDependencies !== null &&
     Object.hasOwn(rawDevelopmentDependencies, "typescript")
   ) {
-    return "ts";
+    return isModule ? "ts" : "mts";
   }
 
-  return "js";
+  return isModule ? "js" : "mjs";
 }
 
 export function generateConfig() {
@@ -101,11 +101,14 @@ export async function init(options: InitOptions): Promise<void> {
 
   // Detect everything
   let workspaceLabel = "single package";
-  let packages: { path: string }[] = [];
+  let childPackages: { path: string }[] = [];
   try {
-    packages = await discoverWorkspace(cwd);
-    if (packages.length > 1) {
-      workspaceLabel = `monorepo with ${String(packages.length)} packages`;
+    const packages = await discoverWorkspace(cwd);
+    childPackages = packages.filter(
+      (p) => path.resolve(cwd, p.path) !== path.resolve(cwd),
+    );
+    if (childPackages.length > 1) {
+      workspaceLabel = `monorepo with ${String(childPackages.length)} packages`;
     }
   } catch {
     workspaceLabel = "unknown (workspace detection failed)";
@@ -129,8 +132,8 @@ export async function init(options: InitOptions): Promise<void> {
 
   console.log(topDivider);
   console.log(`    ${dim(labelPad("Workspace:"))} ${cyan(workspaceLabel)}`);
-  if (packages.length > 1) {
-    for (const package_ of packages) {
+  if (childPackages.length > 1) {
+    for (const package_ of childPackages) {
       const relativePath = path.relative(cwd, package_.path);
       const bullet = dim(`• ${relativePath}`);
       console.log(`    ${labelIndent}${bullet}`);
@@ -149,12 +152,11 @@ export async function init(options: InitOptions): Promise<void> {
     try {
       await installPackage(pm, cwd, options.version);
       stopSpinner();
-      console.log(`  ✅ Installed @udohjeremiah/moniq as devDependency`);
-      console.log();
+      console.log(`  ✔ Installed @udohjeremiah/moniq as devDependency`);
     } catch (error) {
       stopSpinner();
       const errorMessage = `Installation failed: ${String(error)}`;
-      const styledError = styleText("red", `❌ ${errorMessage}`);
+      const styledError = styleText("red", `✘ ${errorMessage}`);
       console.log(`  ${styledError}`);
       console.log(
         `  ${styleText("dim", "Make sure you have a working internet connection and try again.")}`,
@@ -169,13 +171,8 @@ export async function init(options: InitOptions): Promise<void> {
   const { writeFile } = await import("node:fs/promises");
   await writeFile(configPath, STARTER_CONFIG, "utf8");
 
-  const createdMessage = `✅ Created ${filename}`;
+  const createdMessage = `✔ Created ${filename}`;
   console.log(`  ${styleText(["bold", "green"], createdMessage)}`);
-  console.log();
-
-  // Run doctor
-  await doctor();
-
   console.log();
   console.log(`  ${styleText("dim", "Next steps:")}`);
   console.log(

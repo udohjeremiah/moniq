@@ -27,7 +27,7 @@ function formatJson(diagnostics: Diagnostic[]) {
 
 function formatPretty(diagnostics: Diagnostic[], isDryRun?: boolean) {
   if (diagnostics.length === 0) {
-    return styleText(["bold", "green"], "✅ No issues found.");
+    return styleText(["bold", "green"], "✔ No issues found.");
   }
 
   const lines: string[] = [];
@@ -43,7 +43,7 @@ function formatPretty(diagnostics: Diagnostic[], isDryRun?: boolean) {
   }
 
   for (const [packageName, diags] of byPackage) {
-    lines.push("", `📦 ${styleText(["bold", "cyan"], packageName)}`);
+    lines.push("", styleText(["bold", "cyan"], packageName));
 
     for (const d of diags) {
       pushDiagnostic(lines, d, isDryRun);
@@ -59,7 +59,7 @@ function formatPretty(diagnostics: Diagnostic[], isDryRun?: boolean) {
     countParts.push(styleText("yellow", `${String(warningCount)} warning(s)`));
   const summary = countParts.join(", ");
 
-  const summaryLine = `📋 Found ${String(diagnostics.length)} issue(s) — ${summary.length > 0 ? summary : "all clear"}`;
+  const summaryLine = `${styleText("cyan", "ℹ")} Found ${String(diagnostics.length)} issue(s) — ${summary.length > 0 ? summary : "all clear"}`;
   lines.push("", styleText("dim", summaryLine));
 
   if (isDryRun) {
@@ -68,7 +68,10 @@ function formatPretty(diagnostics: Diagnostic[], isDryRun?: boolean) {
     ).length;
     lines.push(
       "",
-      styleText("dim", `🔮 Dry-run: ${String(fixableCount)} fix(es) available`),
+      styleText(
+        "dim",
+        `${styleText("cyan", "ℹ")} Dry-run: ${String(fixableCount)} fix(es) available`,
+      ),
     );
   }
 
@@ -77,9 +80,9 @@ function formatPretty(diagnostics: Diagnostic[], isDryRun?: boolean) {
 
 function pushDiagnostic(lines: string[], d: Diagnostic, isDryRun?: boolean) {
   const badge = severityBadge(d.severity);
-  const emoji = severityEmoji(d.severity);
+  const icon = severityIcon(d.severity);
 
-  lines.push(`  ${emoji} ${badge} ${d.message}`);
+  lines.push(`  ${icon} ${badge} ${d.message}`);
 
   if (d.expected && d.actual) {
     lines.push(
@@ -98,8 +101,7 @@ function pushDiagnostic(lines: string[], d: Diagnostic, isDryRun?: boolean) {
 
   if (d.fix) {
     const label = styleText("dim", isDryRun ? "Would fix:" : "Fix:");
-    const icon = isDryRun ? "🔮" : "🔧";
-    lines.push(`         ${icon} ${label} ${d.fix}`);
+    lines.push(`         ${label} ${d.fix}`);
   }
 }
 
@@ -113,12 +115,12 @@ function severityBadge(severity: Diagnostic["severity"]) {
   return styleText("gray", "OFF");
 }
 
-function severityEmoji(severity: Diagnostic["severity"]) {
+function severityIcon(severity: Diagnostic["severity"]) {
   if (severity === "error") {
-    return "❌";
+    return "✘";
   }
   if (severity === "warn") {
-    return "⚠️ ";
+    return "⚠";
   }
-  return "⚪";
+  return " ";
 }
