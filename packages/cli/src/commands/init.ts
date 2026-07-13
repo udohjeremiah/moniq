@@ -1,8 +1,10 @@
 import {
+  detectPackageManager,
   discoverWorkspace,
   type PackageJson,
   readPackageJson,
 } from "@moniq/workspace";
+import { execFile } from "node:child_process";
 import path from "node:path";
 import { stdin } from "node:process";
 import { createInterface } from "node:readline/promises";
@@ -12,6 +14,23 @@ import { renderBanner } from "../banner.js";
 import { doctor } from "./doctor.js";
 
 const SUPPORTED_LANGS = ["ts", "js", "mjs", "cjs", "mts", "cts"];
+
+const DIVIDER_WIDTH = 44;
+
+function labelPad(label: string): string {
+  return label.padEnd(18);
+}
+
+const STARTER_CONFIG = `import { defineConfig } from "@udohjeremiah/moniq";
+
+export default defineConfig({
+  scripts: {
+    dev: { required: true },
+    build: { required: true },
+    lint: { required: true },
+  },
+});
+`;
 
 export interface InitOptions {
   _cwd?: string;
@@ -52,23 +71,12 @@ export async function detectLang(
   return "js";
 }
 
-export function generateConfig(): string {
-  return `import { defineConfig } from "@udohjeremiah/moniq";
-
-export default defineConfig({
-  scripts: {
-    dev: { required: true },
-    build: { required: true },
-    lint: { required: true },
-  },
-});
-`;
-}
-
 export async function init(options: InitOptions): Promise<void> {
   const { _cwd, lang: explicitLang } = options;
 
   const cwd = _cwd ?? process.cwd();
+
+  console.log(renderBanner());
 
   const rootPackageJson = await readRootPackageJson(cwd);
   if (rootPackageJson === undefined) return;
@@ -85,14 +93,15 @@ export async function init(options: InitOptions): Promise<void> {
   const filename = `moniq.config.${lang}`;
   const configPath = path.join(cwd, filename);
 
-  console.log(renderBanner());
-  console.log();
+  // Check for existing config with overwrite prompt
+  const canProceed = await handleExistingConfig(configPath, filename);
+  if (!canProceed) return;
 
-  // Detect workspace
-  let packages: { path: string }[] = [];
+  // Detect everything
   let workspaceLabel = "single package";
+  let packages: { path: string }[] = [];
   try {
-    packages = discoverWorkspace(cwd);
+    packages = await discoverWorkspace(cwd);
     if (packages.length > 1) {
       workspaceLabel = `monorepo with ${String(packages.length)} packages`;
     }
@@ -100,35 +109,64 @@ export async function init(options: InitOptions): Promise<void> {
     workspaceLabel = "unknown (workspace detection failed)";
   }
 
-  const detectedLabel = `🔍 Detected: ${styleText("cyan", workspaceLabel)}`;
-  console.log(`  ${styleText("dim", detectedLabel)}`);
+  const pm = await detectPackageManager(cwd);
 
+  const isTypeScript = ["cts", "mts", "ts"].includes(lang);
+  const langDisplay = isTypeScript ? "TypeScript" : "JavaScript";
+
+  // Print detection block
+  const dim = (s: string) => styleText("dim", s);
+  const cyan = (s: string) => styleText("cyan", s);
+
+  const sideDashes = (DIVIDER_WIDTH - " Detected ".length) / 2;
+  const topDivider = dim(
+    `  ${"─".repeat(sideDashes)} Detected ${"─".repeat(sideDashes)}`,
+  );
+  const bottomDivider = dim(`  ${"─".repeat(DIVIDER_WIDTH)}`);
+  const labelIndent = " ".repeat(19);
+
+  console.log(topDivider);
+  console.log(`    ${dim(labelPad("Workspace:"))} ${cyan(workspaceLabel)}`);
   if (packages.length > 1) {
     for (const package_ of packages) {
       const relativePath = path.relative(cwd, package_.path);
-      const packageLine = `   • ${relativePath}`;
-      console.log(`  ${styleText("dim", packageLine)}`);
+      const bullet = dim(`• ${relativePath}`);
+      console.log(`    ${labelIndent}${bullet}`);
     }
   }
-
-  const langDisplay = langLabel(lang);
-  const langLine = `🔍 Language: ${styleText("cyan", langDisplay)}`;
-  console.log(`  ${styleText("dim", langLine)}`);
-
+  console.log(`    ${dim(labelPad("Package Manager:"))} ${cyan(pm)}`);
+  console.log(`    ${dim(labelPad("Language:"))} ${cyan(langDisplay)}`);
+  console.log(bottomDivider);
   console.log();
 
-  // Check for existing config
-  const canProceed = await handleExistingConfig(configPath, filename);
-  if (!canProceed) return;
+  // Install package as devDependency
+  const stopSpinner = startSpinner(
+    "Installing @udohjeremiah/moniq as devDependency...",
+  );
+  try {
+    await installPackage(pm, cwd);
+    stopSpinner();
+    console.log(`  ✅ Installed @udohjeremiah/moniq as devDependency`);
+    console.log();
+  } catch (error) {
+    stopSpinner();
+    const errorMessage = `Installation failed: ${String(error)}`;
+    const styledError = styleText("red", `❌ ${errorMessage}`);
+    console.log(`  ${styledError}`);
+    console.log(
+      `  ${styleText("dim", "Make sure you have a working internet connection and try again.")}`,
+    );
+    console.log();
+    process.exitCode = 1;
+    return;
+  }
 
-  // Generate and write config
+  // Write config
   const { writeFile } = await import("node:fs/promises");
-  const configContent = generateConfig();
-  await writeFile(configPath, configContent, "utf8");
+  await writeFile(configPath, STARTER_CONFIG, "utf8");
 
   const createdMessage = `✅ Created ${filename}`;
   console.log(`  ${styleText(["bold", "green"], createdMessage)}`);
-
   console.log();
 
   // Run doctor
@@ -137,7 +175,7 @@ export async function init(options: InitOptions): Promise<void> {
   console.log();
   console.log(`  ${styleText("dim", "Next steps:")}`);
   console.log(
-    `   1. ${styleText("dim", "Edit")} ${styleText("cyan", "moniq.config")} ${styleText("dim", "to fine-tune your policies.")}`,
+    `   1. ${styleText("dim", "Edit")} ${styleText("cyan", filename)} ${styleText("dim", "to configure your policies.")}`,
   );
   console.log(
     `   2. ${styleText("dim", "Run")} ${styleText("cyan", "moniq check")} ${styleText("dim", "to validate your workspace.")}`,
@@ -172,30 +210,29 @@ async function handleExistingConfig(
   return answer.toLowerCase() === "y" || answer.toLowerCase() === "yes";
 }
 
-function langLabel(lang: string): string {
-  switch (lang) {
-    case "cjs": {
-      return "JavaScript (CommonJS)";
+function installArguments(pm: string): string[] {
+  switch (pm) {
+    case "npm": {
+      return ["install", "--save-dev", "@udohjeremiah/moniq"];
     }
-    case "cts": {
-      return "TypeScript (CommonJS)";
-    }
-    case "js": {
-      return "JavaScript";
-    }
-    case "mjs": {
-      return "JavaScript (ESM)";
-    }
-    case "mts": {
-      return "TypeScript (ESM)";
-    }
-    case "ts": {
-      return "TypeScript";
+    case "yarn": {
+      return ["add", "--dev", "@udohjeremiah/moniq"];
     }
     default: {
-      return lang;
+      return ["add", "-D", "@udohjeremiah/moniq"];
     }
   }
+}
+
+function installPackage(pm: string, root: string): Promise<void> {
+  return new Promise((resolve, reject) => {
+    const child = execFile(pm, installArguments(pm), { cwd: root });
+    child.on("exit", (code) => {
+      if (code === 0) resolve();
+      else reject(new Error(`Exit code ${String(code)}`));
+    });
+    child.on("error", reject);
+  });
 }
 
 async function readRootPackageJson(
@@ -215,4 +252,19 @@ async function readRootPackageJson(
     process.exitCode = 1;
     return undefined;
   }
+}
+
+function startSpinner(text: string): () => void {
+  const frames = ["⠋", "⠙", "⠸", "⠴", "⠦", "⠧"];
+  let index = 0;
+  const id = setInterval(() => {
+    const frame = frames.at(index) ?? "";
+    const styled = styleText("dim", `${frame} ${text}`);
+    process.stdout.write(`\r  ${styled}`);
+    index = (index + 1) % frames.length;
+  }, 80);
+  return () => {
+    clearInterval(id);
+    process.stdout.write("\r\u{1B}[K");
+  };
 }
