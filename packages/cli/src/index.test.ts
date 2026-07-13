@@ -18,6 +18,6 @@ describe("banner", () => {
     const banner = renderBanner();
     const lines = banner.split("\n");
     // 6 art lines, 1 blank, 1 description
-    expect(lines.length).toBeGreaterThanOrEqual(8);
+    expect(lines.length).toBeGreaterThanOrEqual(9);
   });
 });

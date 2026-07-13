@@ -1,5 +1,7 @@
 import { styleText } from "node:util";
 
+import moniqPackage from "../../moniq/package.json" with { type: "json" };
+
 const colorFns: ((s: string) => string)[] = [
   (s) => styleText("cyan", s),
   (s) => styleText("magenta", s),
@@ -61,8 +63,9 @@ export function renderBanner(): string {
   }
 
   const description = centerPad(DESCRIPTION, combinedWidth + 12);
+  const versionLine = centerPad(`v${moniqPackage.version}`, combinedWidth + 12);
 
-  lines.push("", description);
+  lines.push("", versionLine, description);
 
   return lines.join("\n");
 }
