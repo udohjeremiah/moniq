@@ -14,16 +14,16 @@ The tsconfig assets follow a "maximum strictness by default" philosophy. Every s
 ## Config hierarchy
 
 ```
-tsconfig.base.json
-├── tsconfig.node.json
-│   ├── tsconfig.fastify.json
-│   └── tsconfig.express.json
-└── tsconfig.react.json
-    ├── tsconfig.nextjs.json
-    └── tsconfig.tanstack-start.json
+base.json
+├── node.json
+│   ├── fastify.json
+│   └── express.json
+└── react.json
+    ├── nextjs.json
+    └── tanstack-start.json
 ```
 
-## Base config (`tsconfig.base.json`)
+## Base config (`base.json`)
 
 All strict flags enabled:
 
@@ -39,26 +39,26 @@ All strict flags enabled:
 - `noPropertyAccessFromIndexSignature: true` — Forces `obj["key"]` over `obj.key` for index signatures.
 - `isolatedModules: true` — Required for build tools like esbuild, SWC, Babel with `isolatedModules`.
 
-## React variant (`tsconfig.react.json`)
+## React variant (`react.json`)
 
 - `jsx: "react-jsx"` — React 19 automatic JSX transform (no need to `import React`).
 - `moduleResolution: "bundler"` — Required by bundlers (Vite, webpack, Turbopack).
 - `noEmit: true` — The bundler handles output.
 
-## Next.js variant (`tsconfig.nextjs.json`)
+## Next.js variant (`nextjs.json`)
 
-- Extends `tsconfig.react.json`.
+- Extends `react.json`.
 - Adds `plugins: [{ name: "next" }]` for VS Code IntelliSense.
 - Adds `incremental: true` for faster builds.
 - Includes `next-env.d.ts` and `.next/types/**/*.ts`.
 
-## TanStack Start variant (`tsconfig.tanstack-start.json`)
+## TanStack Start variant (`tanstack-start.json`)
 
-- Extends `tsconfig.react.json`.
+- Extends `react.json`.
 - Adds `types: ["vite/client"]` for Vite-specific types.
 - Adds `allowImportingTsExtensions: true` — TanStack Start uses `.ts` imports in source.
 
-## Node variant (`tsconfig.node.json`)
+## Node variant (`node.json`)
 
 - `module: "NodeNext"` / `moduleResolution: "NodeNext"` — For direct Node.js execution.
 - `types: ["node"]` — Node.js type definitions.

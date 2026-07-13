@@ -17,7 +17,7 @@
 | ------------------------------------- | ----------------------- | ------------------------------------------------------------------- |
 | `tailwindCSS.experimental.configFile` | Tailwind detected       | Path to CSS entry file (detected from project, e.g., `globals.css`) |
 | `files.watcherExclude`                | TanStack Start detected | `{ "**/routeTree.gen.ts": true }`                                   |
-| `search.exclude` (routeTree entry)    | Always in base          | Already included in `assets/vscode/settings.json`                   |
+| `search.exclude` (routeTree entry)    | TanStack Start detected | `"**/routeTree.gen.ts": true` merged per-detection             |
 | `files.readonlyInclude`               | TanStack Start detected | `{ "**/routeTree.gen.ts": true }`                                   |
 
 ## Extension recommendations (`assets/vscode/extensions.json`)

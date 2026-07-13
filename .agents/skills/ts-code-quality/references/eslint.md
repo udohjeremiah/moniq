@@ -62,9 +62,9 @@ get the latest.
 
 The skill composes configs by spreading arrays. The order matters:
 
-1. **base.config.js** — @eslint/js + typescript-eslint + all shared plugins
+1. **base.js** — @eslint/js + typescript-eslint + all shared plugins
 2. **framework layer** (one of): react / nextjs / tanstack-start / node / fastify / express
-3. **tailwind.config.js** — only if Tailwind detected AND react-based framework
+3. **tailwind.js** — only if Tailwind detected AND react-based framework
 4. **eslint-config-prettier** — always last to disable conflicting rules
 
 ### Type-checked configs

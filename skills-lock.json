@@ -5,13 +5,13 @@
       "source": "conventional-changelog/conventional-changelog",
       "sourceType": "github",
       "skillPath": "skills/conventional-commit-message/SKILL.md",
-      "computedHash": "700b09c3200a3c1750ece3faa969895690ffbc6b74309bda4a2845f677b31991"
+      "computedHash": "6ae250d67edc757e2e54163dae2d32f7b44bd8827231cbab2895db8fc0331ac3"
     },
     "ts-code-quality": {
       "source": "udohjeremiah/skills",
       "sourceType": "github",
       "skillPath": "skills/ts-code-quality/SKILL.md",
-      "computedHash": "d9cf1d6e194e36e59394fdf0e5d19bd3c94517669bc1558a1d4d4b05fa5bb408"
+      "computedHash": "cd5c3e93a6358db1867a256f266bb43abf755ec93bb9442fb540ee00840dd79b"
     }
   }
 }

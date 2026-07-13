@@ -1,7 +1,7 @@
 {
   "$schema": "https://json.schemastore.org/tsconfig",
   "display": "Fastify",
-  "extends": "./tsconfig.node.json",
+  "extends": "./node.json",
   "compilerOptions": {
     "lib": ["ESNext"],
     "newLine": "lf",

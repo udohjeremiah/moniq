@@ -11,7 +11,7 @@ Knip is a dead-code analysis tool. It finds:
 
 ## Generating the config
 
-Run `pnpm create @knip/config` at the project root. This detects the
+Run `<package-manager> create @knip/config` at the project root. This detects the
 project's frameworks, tooling, and structure based on `package.json` and
 generates a `knip.json` with appropriate entry and project patterns.
 

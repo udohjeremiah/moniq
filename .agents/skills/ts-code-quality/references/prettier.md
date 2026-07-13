@@ -21,7 +21,7 @@ Always use the `.prettierrc.json` extension (not bare `.prettierrc`). The
 | `endOfLine`     | `lf`     | Cross-platform consistency.                                                                 |
 | `arrowParens`   | `always` | Required by TypeScript-ESLint for type annotations on arrow params.                         |
 
-## Tailwind variant (`assets/prettier/.prettierrc.tailwind.json`)
+## Tailwind variant (`assets/prettier/tailwind.json`)
 
 Merged into the base config when Tailwind is detected:
 
@@ -35,11 +35,10 @@ locations) and sets the path relative to the project/package root.
 
 ## Prettier ignore
 
-The skill also generates a `.prettierignore` file excluding:
-
-- Build output directories (`dist`, `build`, `.next`, `out`)
-- Lock files
-- Generated route files (e.g., TanStack Start `routeTree.gen.ts`)
+The skill also generates a `.prettierignore` file with universal entries
+(`.agents`, `dist`, `coverage`) plus per-detection additions based on
+the detected framework and package manager (e.g., `.next` for Next.js,
+lockfile for the detected package manager).
 
 ## ESLint + Prettier integration
 
