@@ -218,21 +218,26 @@ function installArguments(pm: string) {
     case "npm": {
       return ["install", "--save-dev", "@udohjeremiah/moniq"];
     }
+    case "pnpm": {
+      return ["add", "-D", "-w", "@udohjeremiah/moniq"];
+    }
     case "yarn": {
       return ["add", "--dev", "@udohjeremiah/moniq"];
     }
-    default: {
-      return ["add", "-D", "@udohjeremiah/moniq"];
-    }
   }
+  throw new Error(`Unknown package manager: ${pm}`);
 }
 
 function installPackage(pm: string, root: string) {
   return new Promise<void>((resolve, reject) => {
     const child = execFile(pm, installArguments(pm), { cwd: root });
+    let stderr = "";
+    child.stderr?.on("data", (chunk: Buffer) => {
+      stderr += chunk.toString();
+    });
     child.on("exit", (code) => {
       if (code === 0) resolve();
-      else reject(new Error(`Exit code ${String(code)}`));
+      else reject(new Error(`Exit code ${String(code)}: ${stderr.trim()}`));
     });
     child.on("error", reject);
   });
