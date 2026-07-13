@@ -1,5 +1,11 @@
 # moniq
 
+## 0.3.2
+
+### Patch Changes
+
+- ef33081: Pin devDependency install to the running CLI version in moniq init, preventing version mismatches caused by npm propagation delays
+
 ## 0.3.1
 
 ### Patch Changes
