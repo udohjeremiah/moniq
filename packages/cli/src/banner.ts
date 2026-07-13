@@ -1,7 +1,5 @@
 import { styleText } from "node:util";
 
-import moniqPackage from "../../moniq/package.json" with { type: "json" };
-
 const colorFns: ((s: string) => string)[] = [
   (s) => styleText("cyan", s),
   (s) => styleText("magenta", s),
@@ -55,24 +53,21 @@ const DESCRIPTION =
   "Policy-driven workspace linter for JavaScript/TypeScript monorepos.";
 
 export function renderBanner(): string {
-  const combinedWidth = 50;
-  const lines: string[] = [];
+  const lines: string[] = [""];
 
   for (let rowIndex = 0; rowIndex < 6; rowIndex++) {
     lines.push(assembleRow(rowIndex));
   }
 
-  const description = centerPad(DESCRIPTION, combinedWidth + 12);
-  const versionLine = centerPad(`v${moniqPackage.version}`, combinedWidth + 12);
+  const description = styleText("bold", DESCRIPTION);
 
-  lines.push("", versionLine, description);
+  lines.push(description, "");
 
   return lines.join("\n");
 }
 
 function assembleRow(rowIndex: number): string {
-  const indent = " ".repeat(6);
-  let row = indent;
+  let row = "";
 
   for (let columnIndex = 0; columnIndex < 5; columnIndex++) {
     row += rowPart(columnIndex, rowIndex);
@@ -82,11 +77,6 @@ function assembleRow(rowIndex: number): string {
   }
 
   return row;
-}
-
-function centerPad(text: string, width: number): string {
-  const pad = Math.max(0, Math.floor((width - text.length) / 2));
-  return " ".repeat(pad) + text;
 }
 
 function rowPart(columnIndex: number, rowIndex: number): string {

@@ -21,7 +21,7 @@ describe("pnpm", () => {
     process.env["npm_config_user_agent"] = "pnpm/";
   });
 
-  it("returns packages from pnpm ls output", () => {
+  it("returns packages from pnpm ls output", async () => {
     vi.mocked(execFileSync).mockReturnValue(
       JSON.stringify([
         { name: "moniq", path: "/repo", private: true },
@@ -30,7 +30,7 @@ describe("pnpm", () => {
       ]),
     );
 
-    const result = discoverWorkspace("/repo");
+    const result = await discoverWorkspace("/repo");
 
     expect(result).toHaveLength(3);
     expect(result[0]).toEqual({ path: "/repo" });
@@ -38,10 +38,10 @@ describe("pnpm", () => {
     expect(result[2]).toEqual({ path: "/repo/packages/core" });
   });
 
-  it("calls pnpm ls with the root directory", () => {
+  it("calls pnpm ls with the root directory", async () => {
     vi.mocked(execFileSync).mockReturnValue("[]");
 
-    discoverWorkspace("/some/project");
+    await discoverWorkspace("/some/project");
 
     expect(execFileSync).toHaveBeenCalledWith(
       expect.any(String),
@@ -56,7 +56,7 @@ describe("yarn", () => {
     process.env["npm_config_user_agent"] = "yarn/";
   });
 
-  it("returns packages from yarn workspaces list output", () => {
+  it("returns packages from yarn workspaces list output", async () => {
     vi.mocked(execFileSync).mockReturnValue(
       [
         JSON.stringify({ location: "packages/cli", name: "@moniq/cli" }),
@@ -64,17 +64,17 @@ describe("yarn", () => {
       ].join("\n"),
     );
 
-    const result = discoverWorkspace("/repo");
+    const result = await discoverWorkspace("/repo");
 
     expect(result).toHaveLength(2);
     expect(result[0]).toEqual({ path: "/repo/packages/cli" });
     expect(result[1]).toEqual({ path: "/repo/packages/core" });
   });
 
-  it("calls yarn workspaces list with the root directory", () => {
+  it("calls yarn workspaces list with the root directory", async () => {
     vi.mocked(execFileSync).mockReturnValue("");
 
-    discoverWorkspace("/some/project");
+    await discoverWorkspace("/some/project");
 
     expect(execFileSync).toHaveBeenCalledWith(
       expect.any(String),
@@ -89,7 +89,7 @@ describe("npm", () => {
     process.env["npm_config_user_agent"] = "npm/";
   });
 
-  it("returns packages from npm ls output", () => {
+  it("returns packages from npm ls output", async () => {
     vi.mocked(execFileSync).mockReturnValue(
       JSON.stringify({
         dependencies: {
@@ -100,17 +100,17 @@ describe("npm", () => {
       }),
     );
 
-    const result = discoverWorkspace("/repo");
+    const result = await discoverWorkspace("/repo");
 
     expect(result).toHaveLength(2);
     expect(result[0]).toEqual({ path: "/repo/packages/cli" });
     expect(result[1]).toEqual({ path: "/repo/packages/core" });
   });
 
-  it("calls npm ls with the root directory", () => {
+  it("calls npm ls with the root directory", async () => {
     vi.mocked(execFileSync).mockReturnValue("{}");
 
-    discoverWorkspace("/some/project");
+    await discoverWorkspace("/some/project");
 
     expect(execFileSync).toHaveBeenCalledWith(
       expect.any(String),
@@ -125,15 +125,15 @@ describe("discoverWorkspace", () => {
     process.env["npm_config_user_agent"] = "pnpm/";
   });
 
-  it("returns an empty array when no packages exist", () => {
+  it("returns an empty array when no packages exist", async () => {
     vi.mocked(execFileSync).mockReturnValue("[]");
 
-    const result = discoverWorkspace("/empty");
+    const result = await discoverWorkspace("/empty");
 
     expect(result).toEqual([]);
   });
 
-  it("returns only path for each package", () => {
+  it("returns only path for each package", async () => {
     vi.mocked(execFileSync).mockReturnValue(
       JSON.stringify([
         {
@@ -146,7 +146,7 @@ describe("discoverWorkspace", () => {
       ]),
     );
 
-    const result = discoverWorkspace("/repo");
+    const result = await discoverWorkspace("/repo");
 
     expect(result).toEqual([{ path: "/repo/packages/core" }]);
   });

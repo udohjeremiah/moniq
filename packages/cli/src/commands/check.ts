@@ -24,7 +24,7 @@ export async function check(options: CheckOptions): Promise<void> {
     );
   }
 
-  const packages = discoverWorkspace(cwd);
+  const packages = await discoverWorkspace(cwd);
   if (packages.length === 0) {
     throw new Error("No workspace packages found.");
   }

@@ -1,6 +1,7 @@
 import { execFileSync } from "node:child_process";
-import { createRequire } from "node:module";
 import path from "node:path";
+
+import { readPackageJson } from "./package-json.js";
 
 export interface Package {
   path: string;
@@ -8,19 +9,57 @@ export interface Package {
 
 type PackageManager = "npm" | "pnpm" | "yarn";
 
-const npmCommand = getNpmCommand();
-const pnpmCommand = getPnpmCommand();
-const yarnCommand = getYarnCommand();
+export async function detectPackageManager(
+  root: string,
+): Promise<PackageManager> {
+  // 1. Check lock files first (project-level signal)
+  const lockFileMap: Record<string, PackageManager> = {
+    "package-lock.json": "npm",
+    "pnpm-lock.yaml": "pnpm",
+    "yarn.lock": "yarn",
+  };
 
-export function discoverWorkspace(root: string): Package[] {
-  const pm = detectPackageManager(root);
+  for (const [lockFile, pm] of Object.entries(lockFileMap)) {
+    try {
+      const { access } = await import("node:fs/promises");
+      await access(path.join(root, lockFile));
+      return pm;
+    } catch {
+      // try next
+    }
+  }
+
+  // 2. Check package.json's packageManager field
+  try {
+    const package_ = await readPackageJson(path.join(root, "package.json"));
+    const rawPm = package_["packageManager"];
+    const pm = typeof rawPm === "string" ? (rawPm.split("@", 2)[0] ?? "") : "";
+    if (["npm", "pnpm", "yarn"].includes(pm)) {
+      return pm as PackageManager;
+    }
+  } catch {
+    // Ignore
+  }
+
+  // 3. Check npm_config_user_agent (runtime context, least reliable)
+  const userAgent = process.env["npm_config_user_agent"] ?? "";
+  if (userAgent.startsWith("pnpm")) return "pnpm";
+  if (userAgent.startsWith("yarn")) return "yarn";
+  if (userAgent.startsWith("npm")) return "npm";
+
+  // 4. Default
+  return "pnpm";
+}
+
+export async function discoverWorkspace(root: string): Promise<Package[]> {
+  const pm = await detectPackageManager(root);
 
   let output: string;
 
   switch (pm) {
     case "npm": {
       output = execFileSync(
-        npmCommand,
+        pmBin("npm"),
         ["ls", "--workspaces", "--all", "--json", "--depth", "0"],
         { cwd: root, encoding: "utf8" },
       );
@@ -33,7 +72,7 @@ export function discoverWorkspace(root: string): Package[] {
     }
     case "pnpm": {
       output = execFileSync(
-        pnpmCommand,
+        pmBin("pnpm"),
         ["ls", "-r", "--depth", "-1", "--json"],
         { cwd: root, encoding: "utf8" },
       );
@@ -41,7 +80,7 @@ export function discoverWorkspace(root: string): Package[] {
       return packages.map((entry) => ({ path: entry.path }));
     }
     case "yarn": {
-      output = execFileSync(yarnCommand, ["workspaces", "list", "--json"], {
+      output = execFileSync(pmBin("yarn"), ["workspaces", "list", "--json"], {
         cwd: root,
         encoding: "utf8",
       });
@@ -56,75 +95,6 @@ export function discoverWorkspace(root: string): Package[] {
   }
 }
 
-function detectPackageManager(root: string): PackageManager {
-  const userAgent = process.env["npm_config_user_agent"] ?? "";
-  if (userAgent.startsWith("pnpm")) return "pnpm";
-  if (userAgent.startsWith("yarn")) return "yarn";
-  if (userAgent.startsWith("npm")) return "npm";
-
-  const request = createRequire(import.meta.url);
-
-  const lockFileMap: Record<string, PackageManager> = {
-    "package-lock.json": "npm",
-    "pnpm-lock.yaml": "pnpm",
-    "yarn.lock": "yarn",
-  };
-
-  for (const [lockFile, pm] of Object.entries(lockFileMap)) {
-    try {
-      request.resolve(path.join(root, lockFile));
-      return pm;
-    } catch {
-      // try next
-    }
-  }
-
-  try {
-    const package_ = request(path.join(root, "package.json")) as Record<
-      string,
-      unknown
-    >;
-    const rawPm = package_["packageManager"];
-    const pm = typeof rawPm === "string" ? (rawPm.split("@", 2)[0] ?? "") : "";
-    if (["npm", "pnpm", "yarn"].includes(pm)) {
-      return pm as PackageManager;
-    }
-  } catch {
-    // Ignore
-  }
-
-  return "pnpm";
-}
-
-function getNpmCommand(): string {
-  return path.join(path.dirname(process.execPath), "npm");
-}
-
-function getPnpmCommand(): string {
-  try {
-    const request = createRequire(import.meta.url);
-    const specifier = ["pnpm", "package.json"].join("/");
-    const packagePath = request.resolve(specifier);
-    return path.resolve(path.dirname(packagePath), "bin", "pnpm.cjs");
-  } catch {
-    return "pnpm";
-  }
-}
-
-function getYarnCommand(): string {
-  try {
-    const request = createRequire(import.meta.url);
-    const specifier = ["@yarnpkg", "cli", "package.json"].join("/");
-    const packagePath = request.resolve(specifier);
-    return path.resolve(path.dirname(packagePath), "sources", "bin", "yarn.js");
-  } catch {
-    try {
-      const request = createRequire(import.meta.url);
-      const specifier = ["yarn", "package.json"].join("/");
-      const packagePath = request.resolve(specifier);
-      return path.resolve(path.dirname(packagePath), "bin", "yarn.js");
-    } catch {
-      return "yarn";
-    }
-  }
+function pmBin(pm: string): string {
+  return pm;
 }

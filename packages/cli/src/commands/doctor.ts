@@ -29,7 +29,7 @@ export async function doctor(): Promise<void> {
 
   // Check 2: Workspace is detectable
   try {
-    const packages = discoverWorkspace(cwd);
+    const packages = await discoverWorkspace(cwd);
     const packageCount = packages.length;
     if (packageCount === 0) {
       issues.push({
