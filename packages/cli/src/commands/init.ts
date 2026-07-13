@@ -35,6 +35,7 @@ export default defineConfig({
 export interface InitOptions {
   _cwd?: string;
   lang?: string;
+  version?: string;
 }
 
 export async function detectLang(cwd: string, packageJson: PackageJson) {
@@ -146,7 +147,7 @@ export async function init(options: InitOptions): Promise<void> {
       "Installing @udohjeremiah/moniq as devDependency...",
     );
     try {
-      await installPackage(pm, cwd);
+      await installPackage(pm, cwd, options.version);
       stopSpinner();
       console.log(`  ✅ Installed @udohjeremiah/moniq as devDependency`);
       console.log();
@@ -210,27 +211,30 @@ async function handleExistingConfig(configPath: string, filename: string) {
   return answer.toLowerCase() === "y" || answer.toLowerCase() === "yes";
 }
 
-function installArguments(pm: string) {
+function installArguments(pm: string, version?: string) {
+  const spec = version
+    ? `@udohjeremiah/moniq@${version}`
+    : "@udohjeremiah/moniq";
   switch (pm) {
     case "bun": {
-      return ["add", "--dev", "@udohjeremiah/moniq"];
+      return ["add", "--dev", spec];
     }
     case "npm": {
-      return ["install", "--save-dev", "@udohjeremiah/moniq"];
+      return ["install", "--save-dev", spec];
     }
     case "pnpm": {
-      return ["add", "-D", "-w", "@udohjeremiah/moniq"];
+      return ["add", "-D", "-w", spec];
     }
     case "yarn": {
-      return ["add", "--dev", "@udohjeremiah/moniq"];
+      return ["add", "--dev", spec];
     }
   }
   throw new Error(`Unknown package manager: ${pm}`);
 }
 
-function installPackage(pm: string, root: string) {
+function installPackage(pm: string, root: string, version?: string) {
   return new Promise<void>((resolve, reject) => {
-    const child = execFile(pm, installArguments(pm), { cwd: root });
+    const child = execFile(pm, installArguments(pm, version), { cwd: root });
     let stderr = "";
     child.stderr?.on("data", (chunk: Buffer) => {
       stderr += chunk.toString();
