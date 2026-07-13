@@ -151,7 +151,7 @@ export async function init(options: InitOptions): Promise<void> {
       await installPackage(pm, cwd, options.version);
       stopSpinner();
       console.log(
-        `  ${styleText(["bold", "green"], "✔ Installed")} ${styleText("cyan", "@udohjeremiah/moniq")} ${styleText(["bold", "green"], "as devDependency")}`,
+        `  ${styleText(["bold", "green"], "✔ Installed @udohjeremiah/moniq as devDependency")}`,
       );
     } catch (error) {
       stopSpinner();
