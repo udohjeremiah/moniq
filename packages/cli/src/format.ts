@@ -21,11 +21,11 @@ export function formatDiagnostics(
   return formatPretty(diagnostics, options?.isDryRun);
 }
 
-function formatJson(diagnostics: Diagnostic[]): string {
+function formatJson(diagnostics: Diagnostic[]) {
   return `${JSON.stringify(diagnostics, undefined, 2)}\n`;
 }
 
-function formatPretty(diagnostics: Diagnostic[], isDryRun?: boolean): string {
+function formatPretty(diagnostics: Diagnostic[], isDryRun?: boolean) {
   if (diagnostics.length === 0) {
     return styleText(["bold", "green"], "✅ No issues found.");
   }
@@ -75,11 +75,7 @@ function formatPretty(diagnostics: Diagnostic[], isDryRun?: boolean): string {
   return lines.join("\n");
 }
 
-function pushDiagnostic(
-  lines: string[],
-  d: Diagnostic,
-  isDryRun?: boolean,
-): void {
+function pushDiagnostic(lines: string[], d: Diagnostic, isDryRun?: boolean) {
   const badge = severityBadge(d.severity);
   const emoji = severityEmoji(d.severity);
 
@@ -107,7 +103,7 @@ function pushDiagnostic(
   }
 }
 
-function severityBadge(severity: Diagnostic["severity"]): string {
+function severityBadge(severity: Diagnostic["severity"]) {
   if (severity === "error") {
     return styleText(["bold", "red"], "ERROR");
   }
@@ -117,7 +113,7 @@ function severityBadge(severity: Diagnostic["severity"]): string {
   return styleText("gray", "OFF");
 }
 
-function severityEmoji(severity: Diagnostic["severity"]): string {
+function severityEmoji(severity: Diagnostic["severity"]) {
   if (severity === "error") {
     return "❌";
   }

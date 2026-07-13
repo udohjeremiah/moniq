@@ -93,7 +93,7 @@ export async function doctor(): Promise<void> {
   }
 }
 
-function checkScriptPolicies(config: Config, issues: DoctorIssue[]): void {
+function checkScriptPolicies(config: Config, issues: DoctorIssue[]) {
   const scripts = config.scripts;
   if (!scripts) return;
 

@@ -73,7 +73,7 @@ export const ScriptPolicyType = Type.Object({
   severity: Type.Optional(severityType),
 });
 
-export function parseScriptPolicy(data: unknown): ScriptPolicy {
+export function parseScriptPolicy(data: unknown) {
   if (!Check(ScriptPolicyType, data)) {
     const errors = Errors(ScriptPolicyType, data);
     const first = errors[0];
@@ -92,9 +92,7 @@ export function parseScriptPolicy(data: unknown): ScriptPolicy {
   return data as ScriptPolicy;
 }
 
-export function parseScriptPolicyOrArray(
-  data: unknown,
-): ScriptPolicy | ScriptPolicy[] {
+export function parseScriptPolicyOrArray(data: unknown) {
   return Array.isArray(data)
     ? data.map((policy) => parseScriptPolicy(policy))
     : parseScriptPolicy(data);

@@ -72,12 +72,12 @@ export async function loadConfig(cwd: string): Promise<Config> {
   return parsed;
 }
 
-async function exists(filePath: string): Promise<boolean> {
+async function exists(filePath: string) {
   const { existsSync } = await import("node:fs");
   return existsSync(filePath);
 }
 
-async function findConfig(startDirectory: string): Promise<string | undefined> {
+async function findConfig(startDirectory: string) {
   let directory = path.resolve(startDirectory);
   let isRootReached = false;
 
@@ -107,5 +107,6 @@ async function findConfig(startDirectory: string): Promise<string | undefined> {
     directory = parent;
   }
 
+  // eslint-disable-next-line unicorn/no-useless-undefined -- required by noImplicitReturns
   return undefined;
 }

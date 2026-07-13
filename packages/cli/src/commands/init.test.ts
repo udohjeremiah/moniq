@@ -5,7 +5,7 @@ import { describe, expect, it } from "vitest";
 
 import { detectLang, generateConfig, init } from "./init.js";
 
-function createTemporaryDirectory(): Promise<string> {
+function createTemporaryDirectory() {
   return mkdtemp(path.join(tmpdir(), "moniq-init-test-"));
 }
 

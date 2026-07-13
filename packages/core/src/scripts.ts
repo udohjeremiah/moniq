@@ -9,7 +9,7 @@ export async function resolveScriptPolicies(
   scriptsConfig: Record<string, ScriptPolicy | ScriptPolicy[]> | undefined,
   root: string,
   packages_: Package[],
-): Promise<Diagnostic[]> {
+) {
   const diagnostics: Diagnostic[] = [];
   const entries = Object.entries(scriptsConfig ?? {});
 
@@ -40,7 +40,7 @@ export async function resolveScriptPolicies(
 function isCommandMatch(
   actual: string,
   expected: ((command: string) => boolean) | RegExp | string,
-): boolean {
+) {
   if (typeof expected === "function") {
     return expected(actual);
   }
@@ -50,7 +50,7 @@ function isCommandMatch(
   return actual === expected;
 }
 
-function isGlobMatch(pattern: string, relativePath: string): boolean {
+function isGlobMatch(pattern: string, relativePath: string) {
   if (pattern === "*") {
     return true;
   }
@@ -62,7 +62,7 @@ function isGlobMatch(pattern: string, relativePath: string): boolean {
   return wcmatch(pattern)(relativePath);
 }
 
-function isMatchAny(patterns: string[], relativePath: string): boolean {
+function isMatchAny(patterns: string[], relativePath: string) {
   for (const pattern of patterns) {
     if (isGlobMatch(pattern, relativePath)) {
       return true;
@@ -71,7 +71,7 @@ function isMatchAny(patterns: string[], relativePath: string): boolean {
   return false;
 }
 
-function isPolicyMatch(policy: ScriptPolicy, relativePath: string): boolean {
+function isPolicyMatch(policy: ScriptPolicy, relativePath: string) {
   const include = policy.include ?? ["*"];
   const exclude = policy.exclude ?? [];
 
@@ -98,7 +98,7 @@ async function resolvePolicy(
   package_: Package,
   relativePath: string,
   diagnostics: Diagnostic[],
-): Promise<void> {
+) {
   const packageJson = await readPackageJson(
     path.join(package_.path, "package.json"),
   );
