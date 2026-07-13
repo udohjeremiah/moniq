@@ -60,9 +60,7 @@ export async function doctor(): Promise<void> {
   const hasIssues = issues.some((issue) => issue.severity !== "info");
 
   if (!hasIssues) {
-    console.log(
-      `  ${styleText(["bold", "green"], "✔ Everything looks good!")}`,
-    );
+    console.log(styleText(["bold", "green"], "✔ Everything looks good!"));
     return;
   }
 
@@ -81,13 +79,13 @@ export async function doctor(): Promise<void> {
   const summary = styleText("dim", `Found ${errorText}, ${warningText}`);
 
   console.log();
-  console.log(`  ${summary}`);
+  console.log(summary);
 
   if (errorCount > 0) {
     const tip = styleText(["bold", "cyan"], "Tip:");
     const hint = styleText("dim", "moniq init");
     console.log();
-    console.log(`  ${tip} Run ${hint} to scaffold a starter configuration.`);
+    console.log(`${tip} Run ${hint} to scaffold a starter configuration.`);
   }
 }
 
