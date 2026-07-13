@@ -1,5 +1,20 @@
 # moniq
 
+## 0.3.0
+
+### Minor Changes
+
+- 55a21ce: feat: add bun package manager support
+
+  - Detect bun via `bun.lock`/`bun.lockb` lock files, `packageManager` field, and `npm_config_user_agent`
+  - Discover bun workspaces by resolving globs from `package.json` workspaces field using Node 22+ native `fs.glob`
+  - Install package with `bun add --dev` during `moniq init`
+  - `bunx` already supported in `bin()` wrapper stripping
+
+### Patch Changes
+
+- bc27b93: fix workspace detection priority and install package during init
+
 ## 0.2.0
 
 ### Minor Changes
