@@ -85,7 +85,7 @@ describe("detectLang", () => {
 
     const result = await detectLang(directory, { dependencies: {} });
 
-    expect(result).toBe("ts");
+    expect(result).toBe("mts");
 
     await rm(directory, { recursive: true });
   });
@@ -97,7 +97,7 @@ describe("detectLang", () => {
       dependencies: { typescript: "^5.0.0" },
     });
 
-    expect(result).toBe("ts");
+    expect(result).toBe("mts");
 
     await rm(directory, { recursive: true });
   });
@@ -109,7 +109,7 @@ describe("detectLang", () => {
       devDependencies: { typescript: "^5.0.0" },
     });
 
-    expect(result).toBe("ts");
+    expect(result).toBe("mts");
 
     await rm(directory, { recursive: true });
   });
@@ -121,17 +121,17 @@ describe("detectLang", () => {
 
     const result = await detectLang(directory, { dependencies: {} });
 
-    expect(result).toBe("ts");
+    expect(result).toBe("mts");
 
     await rm(directory, { recursive: true });
   });
 
-  it("defaults to JavaScript when no TypeScript detected", async () => {
+  it("defaults to JavaScript ESM when no TypeScript detected", async () => {
     const directory = await createTemporaryDirectory();
 
     const result = await detectLang(directory, { dependencies: {} });
 
-    expect(result).toBe("js");
+    expect(result).toBe("mjs");
 
     await rm(directory, { recursive: true });
   });
@@ -151,7 +151,7 @@ describe("init auto-detection", () => {
 
     const { readFile } = await import("node:fs/promises");
     const content = await readFile(
-      path.join(directory, "moniq.config.ts"),
+      path.join(directory, "moniq.config.mts"),
       "utf8",
     );
     expect(content).toContain("defineConfig");
@@ -174,7 +174,7 @@ describe("init auto-detection", () => {
 
     const { readFile } = await import("node:fs/promises");
     const content = await readFile(
-      path.join(directory, "moniq.config.ts"),
+      path.join(directory, "moniq.config.mts"),
       "utf8",
     );
     expect(content).toContain("defineConfig");
@@ -182,7 +182,7 @@ describe("init auto-detection", () => {
     await rm(directory, { recursive: true });
   });
 
-  it("defaults to JavaScript when no TypeScript detected", async () => {
+  it("defaults to JavaScript ESM when no TypeScript detected", async () => {
     const directory = await createTemporaryDirectory();
     const { writeFile } = await import("node:fs/promises");
     await writeFile(
@@ -194,7 +194,7 @@ describe("init auto-detection", () => {
 
     const { readFile } = await import("node:fs/promises");
     const content = await readFile(
-      path.join(directory, "moniq.config.js"),
+      path.join(directory, "moniq.config.mjs"),
       "utf8",
     );
     expect(content).toContain("defineConfig");

@@ -18,10 +18,10 @@ export async function check(options: CheckOptions): Promise<void> {
   let config;
   try {
     config = await loadConfig(cwd);
-  } catch {
-    throw new Error(
-      "No moniq.config file found in or above the current directory.",
-    );
+  } catch (error) {
+    throw new Error(`Failed to load moniq.config: ${String(error)}`, {
+      cause: error,
+    });
   }
 
   const packages = await discoverWorkspace(cwd);
@@ -40,7 +40,9 @@ export async function check(options: CheckOptions): Promise<void> {
   }
 
   if (options.format !== "json") {
-    console.log(`  🔍 Scanned ${String(packages.length)} package(s)`);
+    console.log(
+      `  ${styleText("cyan", "ℹ")} Scanned ${String(packages.length)} package(s)`,
+    );
     console.log();
   }
 
@@ -53,10 +55,10 @@ export async function check(options: CheckOptions): Promise<void> {
 
   if (fixSummary) {
     if (fixSummary.isDryRun) {
-      const message = `🔮 Dry-run: ${String(fixSummary.fixed)} fix(es) available, ${String(fixSummary.errors)} error(s)`;
+      const message = `${styleText("cyan", "ℹ")} Dry-run: ${String(fixSummary.fixed)} fix(es) available, ${String(fixSummary.errors)} error(s)`;
       console.log(styleText("dim", message));
     } else {
-      const message = `✅ Fixed ${String(fixSummary.fixed)} issue(s) across ${String(fixSummary.packageCount)} package(s)`;
+      const message = `✔ Fixed ${String(fixSummary.fixed)} issue(s) across ${String(fixSummary.packageCount)} package(s)`;
       console.log(styleText(["bold", "green"], message));
     }
   }
