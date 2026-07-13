@@ -9,7 +9,7 @@ const WRAPPER_SEQUENCES = [
 const WRAPPER_SINGLE = new Set(["bunx", "node", "npx", "yarn"]);
 
 export function bin(name: string) {
-  return (command: string): boolean => {
+  return (command: string) => {
     let tokens = parse(command).filter(
       (t): t is string => typeof t === "string",
     );
@@ -57,7 +57,7 @@ function stripWrappers(tokens: string[]): { remaining: string[] } {
   return { remaining };
 }
 
-function toBinaryName(token: string): string {
+function toBinaryName(token: string) {
   if (token.startsWith("@")) {
     const atIndexes = Array.from(token.matchAll(/@/g), (m) => m.index);
 

@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import { parseScriptPolicy } from "./scripts.js";
 
-const isValid = (): boolean => true;
+const isValid = () => true;
 
 describe("parseScriptPolicy", () => {
   it("accepts a minimal policy", () => {

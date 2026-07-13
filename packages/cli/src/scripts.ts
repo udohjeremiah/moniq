@@ -12,7 +12,7 @@ export interface FixSummary {
 export async function applyScriptFixes(
   diagnostics: Diagnostic[],
   options?: { isDryRun?: boolean },
-): Promise<FixSummary> {
+) {
   const fixable = diagnostics.filter((d) => d.fix && d.severity !== "off");
   const isDryRun = options?.isDryRun ?? false;
   let fixed = 0;

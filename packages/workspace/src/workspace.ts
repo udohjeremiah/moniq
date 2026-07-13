@@ -101,7 +101,7 @@ export async function discoverWorkspace(root: string): Promise<Package[]> {
   }
 }
 
-function getWorkspacePatterns(packageJson: Record<string, unknown>): string[] {
+function getWorkspacePatterns(packageJson: Record<string, unknown>) {
   const raw = packageJson["workspaces"];
   if (Array.isArray(raw)) {
     return raw as string[];
@@ -117,11 +117,11 @@ function getWorkspacePatterns(packageJson: Record<string, unknown>): string[] {
   return [];
 }
 
-function pmBin(pm: string): string {
+function pmBin(pm: string) {
   return pm;
 }
 
-async function resolveBunWorkspaces(root: string): Promise<Package[]> {
+async function resolveBunWorkspaces(root: string) {
   const rootPackageJson = await readPackageJson(
     path.join(root, "package.json"),
   );

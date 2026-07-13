@@ -1,5 +1,4 @@
 import { type Config } from "@moniq/config";
-import { type Package } from "@moniq/workspace";
 import { mkdtemp, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
@@ -10,7 +9,7 @@ import { resolve } from "./index.js";
 async function createFixture(
   root: string,
   packages: Record<string, Record<string, unknown>>,
-): Promise<void> {
+) {
   for (const [relativePath, json] of Object.entries(packages)) {
     const directory = path.join(root, relativePath);
     const { mkdir, writeFile } = await import("node:fs/promises");
@@ -22,11 +21,11 @@ async function createFixture(
   }
 }
 
-async function createTemporaryDirectory(): Promise<string> {
+async function createTemporaryDirectory() {
   return mkdtemp(path.join(tmpdir(), "moniq-core-test-"));
 }
 
-function rootPack(root: string, ...relativePaths: string[]): Package[] {
+function rootPack(root: string, ...relativePaths: string[]) {
   return relativePaths.map((relative) => ({
     path: path.join(root, relative),
   }));

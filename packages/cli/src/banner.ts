@@ -52,7 +52,7 @@ const letterRows: string[][] = [
 const DESCRIPTION =
   "Policy-driven workspace linter for JavaScript/TypeScript monorepos.";
 
-export function renderBanner(): string {
+export function renderBanner() {
   const lines: string[] = [""];
 
   for (let rowIndex = 0; rowIndex < 6; rowIndex++) {
@@ -66,7 +66,7 @@ export function renderBanner(): string {
   return lines.join("\n");
 }
 
-function assembleRow(rowIndex: number): string {
+function assembleRow(rowIndex: number) {
   let row = "";
 
   for (let columnIndex = 0; columnIndex < 5; columnIndex++) {
@@ -79,7 +79,7 @@ function assembleRow(rowIndex: number): string {
   return row;
 }
 
-function rowPart(columnIndex: number, rowIndex: number): string {
+function rowPart(columnIndex: number, rowIndex: number) {
   const rows = letterRows.at(columnIndex);
   const colorFunction = colorFns.at(columnIndex);
   if (rows === undefined || colorFunction === undefined) return "";

@@ -5,7 +5,7 @@ import { describe, expect, it } from "vitest";
 
 import { readPackageJson, writePackageJson } from "./package-json.js";
 
-function createTemporaryDirectory(): Promise<string> {
+function createTemporaryDirectory() {
   return mkdtemp(path.join(tmpdir(), "moniq-workspace-test-"));
 }
 

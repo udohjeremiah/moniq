@@ -17,7 +17,7 @@ const SUPPORTED_LANGS = ["ts", "js", "mjs", "cjs", "mts", "cts"];
 
 const DIVIDER_WIDTH = 44;
 
-function labelPad(label: string): string {
+function labelPad(label: string) {
   return label.padEnd(18);
 }
 
@@ -37,10 +37,7 @@ export interface InitOptions {
   lang?: string;
 }
 
-export async function detectLang(
-  cwd: string,
-  packageJson: PackageJson,
-): Promise<string> {
+export async function detectLang(cwd: string, packageJson: PackageJson) {
   const rawDependencies = packageJson["dependencies"];
   const rawDevelopmentDependencies = packageJson["devDependencies"];
 
@@ -71,7 +68,7 @@ export async function detectLang(
   return "js";
 }
 
-export function generateConfig(): string {
+export function generateConfig() {
   return STARTER_CONFIG;
 }
 
@@ -192,10 +189,7 @@ export async function init(options: InitOptions): Promise<void> {
   console.log();
 }
 
-async function handleExistingConfig(
-  configPath: string,
-  filename: string,
-): Promise<boolean> {
+async function handleExistingConfig(configPath: string, filename: string) {
   const { access } = await import("node:fs/promises");
   try {
     await access(configPath);
@@ -216,7 +210,7 @@ async function handleExistingConfig(
   return answer.toLowerCase() === "y" || answer.toLowerCase() === "yes";
 }
 
-function installArguments(pm: string): string[] {
+function installArguments(pm: string) {
   switch (pm) {
     case "bun": {
       return ["add", "--dev", "@udohjeremiah/moniq"];
@@ -233,8 +227,8 @@ function installArguments(pm: string): string[] {
   }
 }
 
-function installPackage(pm: string, root: string): Promise<void> {
-  return new Promise((resolve, reject) => {
+function installPackage(pm: string, root: string) {
+  return new Promise<void>((resolve, reject) => {
     const child = execFile(pm, installArguments(pm), { cwd: root });
     child.on("exit", (code) => {
       if (code === 0) resolve();
@@ -244,9 +238,7 @@ function installPackage(pm: string, root: string): Promise<void> {
   });
 }
 
-async function readRootPackageJson(
-  cwd: string,
-): Promise<PackageJson | undefined> {
+async function readRootPackageJson(cwd: string) {
   try {
     return await readPackageJson(path.join(cwd, "package.json"));
   } catch {
@@ -259,7 +251,7 @@ async function readRootPackageJson(
     );
     console.log();
     process.exitCode = 1;
-    return undefined;
+    return;
   }
 }
 

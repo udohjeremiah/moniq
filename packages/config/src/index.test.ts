@@ -5,12 +5,12 @@ import { describe, expect, it } from "vitest";
 
 import { defineConfig, loadConfig } from "./index.js";
 
-async function createSubdirectory(parent: string, sub: string): Promise<void> {
+async function createSubdirectory(parent: string, sub: string) {
   const { mkdir } = await import("node:fs/promises");
   await mkdir(path.join(parent, sub), { recursive: true });
 }
 
-function createTemporaryDirectory(): Promise<string> {
+function createTemporaryDirectory() {
   return mkdtemp(path.join(tmpdir(), "moniq-config-test-"));
 }
 
@@ -18,7 +18,7 @@ async function writeConfig(
   directory: string,
   content: string,
   extension = ".ts",
-): Promise<string> {
+) {
   const { writeFile } = await import("node:fs/promises");
   const configPath = path.join(directory, `moniq.config${extension}`);
   await writeFile(configPath, content);
