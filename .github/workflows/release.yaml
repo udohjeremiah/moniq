@@ -25,10 +25,8 @@ jobs:
           package-manager-cache: false
       - run: pnpm install
       - run: pnpm build
-      - run: git config core.hooksPath .git/no-hooks
+      - run: git config core.hooksPath /dev/null
       - uses: changesets/action@v1
-        env:
-          HUSKY: 0
         with:
           publish: pnpm changeset publish
           title: "chore(release): version packages"
