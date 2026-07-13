@@ -218,6 +218,9 @@ async function handleExistingConfig(
 
 function installArguments(pm: string): string[] {
   switch (pm) {
+    case "bun": {
+      return ["add", "--dev", "@udohjeremiah/moniq"];
+    }
     case "npm": {
       return ["install", "--save-dev", "@udohjeremiah/moniq"];
     }
