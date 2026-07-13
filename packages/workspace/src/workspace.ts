@@ -50,8 +50,11 @@ export async function detectPackageManager(
   if (userAgent.startsWith("yarn")) return "yarn";
   if (userAgent.startsWith("npm")) return "npm";
 
-  // 4. Default
-  return "pnpm";
+  // 4. No package manager detected
+  throw new Error(
+    "Could not detect package manager. " +
+      "Ensure a lock file (package-lock.json, pnpm-lock.yaml, yarn.lock, or bun.lock) exists in the project root.",
+  );
 }
 
 export async function discoverWorkspace(root: string): Promise<Package[]> {

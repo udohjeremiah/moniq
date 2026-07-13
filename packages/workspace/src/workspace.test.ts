@@ -35,10 +35,10 @@ describe("detectPackageManager", () => {
     expect(result).toBe("npm");
   });
 
-  it("defaults to pnpm when nothing is detected", async () => {
-    const result = await detectPackageManager("/nonexistent");
-
-    expect(result).toBe("pnpm");
+  it("throws when nothing is detected", async () => {
+    await expect(detectPackageManager("/nonexistent")).rejects.toThrow(
+      "Could not detect package manager",
+    );
   });
 });
 
