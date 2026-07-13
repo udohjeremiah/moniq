@@ -11,8 +11,7 @@ export async function doctor(): Promise<void> {
   const cwd = process.cwd();
   const issues: DoctorIssue[] = [];
 
-  console.log();
-  console.log(`  ${styleText("bold", "Configuration Doctor")}`);
+  console.log(styleText("bold", "Configuration Doctor"));
 
   // Check 1: Workspace is detectable
   try {
@@ -61,9 +60,7 @@ export async function doctor(): Promise<void> {
   const hasIssues = issues.some((issue) => issue.severity !== "info");
 
   if (!hasIssues) {
-    console.log(
-      `  ${styleText(["bold", "green"], "✔ Everything looks good!")}`,
-    );
+    console.log(styleText(["bold", "green"], "✔ Everything looks good!"));
     return;
   }
 
@@ -82,13 +79,13 @@ export async function doctor(): Promise<void> {
   const summary = styleText("dim", `Found ${errorText}, ${warningText}`);
 
   console.log();
-  console.log(`  ${summary}`);
+  console.log(summary);
 
   if (errorCount > 0) {
     const tip = styleText(["bold", "cyan"], "Tip:");
     const hint = styleText("dim", "moniq init");
     console.log();
-    console.log(`  ${tip} Run ${hint} to scaffold a starter configuration.`);
+    console.log(`${tip} Run ${hint} to scaffold a starter configuration.`);
   }
 }
 
@@ -113,25 +110,13 @@ function checkScriptPolicies(config: Config, issues: DoctorIssue[]) {
 }
 
 function formatIssue(issue: DoctorIssue): string {
-  let icon: string;
-  let label: string;
-  let iconColor: "cyan" | "dim";
-
   if (issue.severity === "error") {
-    icon = "✘";
-    label = styleText(["bold", "red"], "ERROR");
-    iconColor = "dim";
-  } else if (issue.severity === "warn") {
-    icon = "⚠";
-    label = styleText(["bold", "yellow"], "WARN");
-    iconColor = "dim";
-  } else {
-    icon = "ℹ";
-    label = styleText(["bold", "cyan"], "INFO");
-    iconColor = "cyan";
+    return `  ${styleText(["bold", "red"], "✘")} ${styleText(["bold", "red"], "ERROR")} ${issue.message}`;
   }
-
-  return `  ${styleText(iconColor, icon)} ${label} ${issue.message}`;
+  if (issue.severity === "warn") {
+    return `  ${styleText(["bold", "yellow"], "⚠")} ${styleText(["bold", "yellow"], "WARN")} ${issue.message}`;
+  }
+  return `  ${styleText("cyan", "ℹ")} ${styleText(["bold", "cyan"], "INFO")} ${issue.message}`;
 }
 
 function severityIndex(severity: DoctorIssue["severity"]): number {

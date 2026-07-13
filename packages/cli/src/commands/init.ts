@@ -101,14 +101,12 @@ export async function init(options: InitOptions): Promise<void> {
 
   // Detect everything
   let workspaceLabel = "single package";
-  let childPackages: { path: string }[] = [];
+  let workspacePackages: { path: string }[] = [];
   try {
     const packages = await discoverWorkspace(cwd);
-    childPackages = packages.filter(
-      (p) => path.resolve(cwd, p.path) !== path.resolve(cwd),
-    );
-    if (childPackages.length > 1) {
-      workspaceLabel = `monorepo with ${String(childPackages.length)} packages`;
+    workspacePackages = packages;
+    if (workspacePackages.length > 1) {
+      workspaceLabel = `monorepo with ${String(workspacePackages.length)} packages`;
     }
   } catch {
     workspaceLabel = "unknown (workspace detection failed)";
@@ -132,8 +130,8 @@ export async function init(options: InitOptions): Promise<void> {
 
   console.log(topDivider);
   console.log(`    ${dim(labelPad("Workspace:"))} ${cyan(workspaceLabel)}`);
-  if (childPackages.length > 1) {
-    for (const package_ of childPackages) {
+  if (workspacePackages.length > 1) {
+    for (const package_ of workspacePackages) {
       const relativePath = path.relative(cwd, package_.path);
       const bullet = dim(`• ${relativePath}`);
       console.log(`    ${labelIndent}${bullet}`);
@@ -147,12 +145,14 @@ export async function init(options: InitOptions): Promise<void> {
   // Install package as devDependency (skip in test mode)
   if (!_cwd) {
     const stopSpinner = startSpinner(
-      "Installing @udohjeremiah/moniq as devDependency...",
+      `Installing ${styleText("cyan", "@udohjeremiah/moniq")} as devDependency...`,
     );
     try {
       await installPackage(pm, cwd, options.version);
       stopSpinner();
-      console.log(`  ✔ Installed @udohjeremiah/moniq as devDependency`);
+      console.log(
+        `  ${styleText(["bold", "green"], "✔ Installed @udohjeremiah/moniq as devDependency")}`,
+      );
     } catch (error) {
       stopSpinner();
       const errorMessage = `Installation failed: ${String(error)}`;
@@ -266,7 +266,7 @@ function startSpinner(text: string): () => void {
   let index = 0;
   const id = setInterval(() => {
     const frame = frames.at(index) ?? "";
-    const styled = styleText("dim", `${frame} ${text}`);
+    const styled = `${styleText("dim", frame)} ${text}`;
     process.stdout.write(`\r  ${styled}`);
     index = (index + 1) % frames.length;
   }, 80);
