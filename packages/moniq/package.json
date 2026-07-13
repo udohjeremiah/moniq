@@ -1,6 +1,6 @@
 {
   "name": "@udohjeremiah/moniq",
-  "version": "0.3.0",
+  "version": "0.3.1",
   "description": "Policy-driven workspace linter for JavaScript/TypeScript monorepos",
   "type": "module",
   "license": "MIT",
