@@ -1,5 +1,6 @@
 import { cac } from "cac";
 
+import moniqPackage from "../../moniq/package.json" with { type: "json" };
 import { check } from "./commands/check.js";
 import { doctor } from "./commands/doctor.js";
 import { init } from "./commands/init.js";
@@ -51,12 +52,14 @@ cli
   .command("init", "Scaffold a moniq.config file in the current directory")
   .option(
     "--lang <type>",
-    "Config language: ts, js, mjs, cjs, mts, cts (default: ts)",
+    "Config language: ts, js, mjs, cjs, mts, cts (default: auto-detected)",
   )
   .action(async (options: Record<string, unknown>) => {
-    const lang = typeof options["lang"] === "string" ? options["lang"] : "ts";
+    const lang =
+      typeof options["lang"] === "string" ? options["lang"] : undefined;
     await init({ lang });
   });
 
 cli.help();
+cli.version(moniqPackage.version);
 cli.parse();
