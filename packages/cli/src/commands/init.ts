@@ -71,6 +71,10 @@ export async function detectLang(
   return "js";
 }
 
+export function generateConfig(): string {
+  return STARTER_CONFIG;
+}
+
 export async function init(options: InitOptions): Promise<void> {
   const { _cwd, lang: explicitLang } = options;
 
@@ -139,26 +143,28 @@ export async function init(options: InitOptions): Promise<void> {
   console.log(bottomDivider);
   console.log();
 
-  // Install package as devDependency
-  const stopSpinner = startSpinner(
-    "Installing @udohjeremiah/moniq as devDependency...",
-  );
-  try {
-    await installPackage(pm, cwd);
-    stopSpinner();
-    console.log(`  ✅ Installed @udohjeremiah/moniq as devDependency`);
-    console.log();
-  } catch (error) {
-    stopSpinner();
-    const errorMessage = `Installation failed: ${String(error)}`;
-    const styledError = styleText("red", `❌ ${errorMessage}`);
-    console.log(`  ${styledError}`);
-    console.log(
-      `  ${styleText("dim", "Make sure you have a working internet connection and try again.")}`,
+  // Install package as devDependency (skip in test mode)
+  if (!_cwd) {
+    const stopSpinner = startSpinner(
+      "Installing @udohjeremiah/moniq as devDependency...",
     );
-    console.log();
-    process.exitCode = 1;
-    return;
+    try {
+      await installPackage(pm, cwd);
+      stopSpinner();
+      console.log(`  ✅ Installed @udohjeremiah/moniq as devDependency`);
+      console.log();
+    } catch (error) {
+      stopSpinner();
+      const errorMessage = `Installation failed: ${String(error)}`;
+      const styledError = styleText("red", `❌ ${errorMessage}`);
+      console.log(`  ${styledError}`);
+      console.log(
+        `  ${styleText("dim", "Make sure you have a working internet connection and try again.")}`,
+      );
+      console.log();
+      process.exitCode = 1;
+      return;
+    }
   }
 
   // Write config

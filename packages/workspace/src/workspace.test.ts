@@ -22,9 +22,7 @@ describe("detectPackageManager", () => {
   });
 
   it("detects pnpm from packageManager field", async () => {
-    const result = await detectPackageManager(
-      "/Users/udohjeremiah/dev/moniq",
-    );
+    const result = await detectPackageManager("/Users/udohjeremiah/dev/moniq");
 
     expect(result).toBe("pnpm");
   });
