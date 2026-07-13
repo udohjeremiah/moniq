@@ -4,6 +4,9 @@
   "workspaces": {
     ".": {
       "ignore": [".agents/**"]
+    },
+    "packages/workspace": {
+      "ignoreDependencies": ["npm", "pnpm", "yarn"]
     }
   }
 }
