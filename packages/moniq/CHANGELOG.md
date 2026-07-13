@@ -1,5 +1,11 @@
 # moniq
 
+## 0.2.0
+
+### Minor Changes
+
+- de95aa3: Add version display to banner, `--version` flag, and auto-detect TypeScript vs JavaScript for `moniq init`
+
 ## 0.1.1
 
 ### Patch Changes
