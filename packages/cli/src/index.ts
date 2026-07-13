@@ -57,7 +57,7 @@ cli
   .action(async (options: Record<string, unknown>) => {
     const lang =
       typeof options["lang"] === "string" ? options["lang"] : undefined;
-    await init({ lang });
+    await init({ lang, version: moniqPackage.version });
   });
 
 cli.help();
