@@ -7,13 +7,15 @@ export interface Package {
   path: string;
 }
 
-type PackageManager = "npm" | "pnpm" | "yarn";
+type PackageManager = "bun" | "npm" | "pnpm" | "yarn";
 
 export async function detectPackageManager(
   root: string,
 ): Promise<PackageManager> {
   // 1. Check lock files first (project-level signal)
   const lockFileMap: Record<string, PackageManager> = {
+    "bun.lock": "bun",
+    "bun.lockb": "bun",
     "package-lock.json": "npm",
     "pnpm-lock.yaml": "pnpm",
     "yarn.lock": "yarn",
@@ -34,7 +36,7 @@ export async function detectPackageManager(
     const package_ = await readPackageJson(path.join(root, "package.json"));
     const rawPm = package_["packageManager"];
     const pm = typeof rawPm === "string" ? (rawPm.split("@", 2)[0] ?? "") : "";
-    if (["npm", "pnpm", "yarn"].includes(pm)) {
+    if (["bun", "npm", "pnpm", "yarn"].includes(pm)) {
       return pm as PackageManager;
     }
   } catch {
@@ -43,6 +45,7 @@ export async function detectPackageManager(
 
   // 3. Check npm_config_user_agent (runtime context, least reliable)
   const userAgent = process.env["npm_config_user_agent"] ?? "";
+  if (userAgent.startsWith("bun")) return "bun";
   if (userAgent.startsWith("pnpm")) return "pnpm";
   if (userAgent.startsWith("yarn")) return "yarn";
   if (userAgent.startsWith("npm")) return "npm";
@@ -57,6 +60,9 @@ export async function discoverWorkspace(root: string): Promise<Package[]> {
   let output: string;
 
   switch (pm) {
+    case "bun": {
+      return resolveBunWorkspaces(root);
+    }
     case "npm": {
       output = execFileSync(
         pmBin("npm"),
@@ -95,6 +101,42 @@ export async function discoverWorkspace(root: string): Promise<Package[]> {
   }
 }
 
+function getWorkspacePatterns(packageJson: Record<string, unknown>): string[] {
+  const raw = packageJson["workspaces"];
+  if (Array.isArray(raw)) {
+    return raw as string[];
+  }
+  if (
+    typeof raw === "object" &&
+    raw !== null &&
+    "packages" in raw &&
+    Array.isArray(raw.packages)
+  ) {
+    return raw.packages as string[];
+  }
+  return [];
+}
+
 function pmBin(pm: string): string {
   return pm;
+}
+
+async function resolveBunWorkspaces(root: string): Promise<Package[]> {
+  const rootPackageJson = await readPackageJson(
+    path.join(root, "package.json"),
+  );
+  const patterns = getWorkspacePatterns(rootPackageJson);
+
+  const { glob } = await import("node:fs/promises");
+  const packagePaths: string[] = [];
+  for (const pattern of patterns) {
+    const iterable = glob(pattern, { cwd: root });
+    for await (const entry of iterable) {
+      const absolute = path.resolve(root, entry);
+      if (!packagePaths.includes(absolute)) {
+        packagePaths.push(absolute);
+      }
+    }
+  }
+  return packagePaths.map((p) => ({ path: p }));
 }
