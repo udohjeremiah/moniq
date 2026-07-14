@@ -7,7 +7,7 @@ export interface Package {
   path: string;
 }
 
-type PackageManager = "bun" | "npm" | "pnpm" | "yarn";
+export type PackageManager = "bun" | "deno" | "npm" | "pnpm" | "yarn";
 
 export async function detectPackageManager(
   root: string,
@@ -16,6 +16,7 @@ export async function detectPackageManager(
   const lockFileMap: Record<string, PackageManager> = {
     "bun.lock": "bun",
     "bun.lockb": "bun",
+    "deno.lock": "deno",
     "package-lock.json": "npm",
     "pnpm-lock.yaml": "pnpm",
     "yarn.lock": "yarn",
@@ -31,29 +32,47 @@ export async function detectPackageManager(
     }
   }
 
-  // 2. Check package.json's packageManager field
+  // 2. Check for deno.json or deno.jsonc (Deno-native projects may not have a lock file)
+  //    Deno projects frequently .gitignore deno.lock, so we check the config file too.
+  try {
+    const { access } = await import("node:fs/promises");
+    await access(path.join(root, "deno.json"));
+    return "deno";
+  } catch {
+    // try deno.jsonc
+  }
+  try {
+    const { access } = await import("node:fs/promises");
+    await access(path.join(root, "deno.jsonc"));
+    return "deno";
+  } catch {
+    // continue
+  }
+
+  // 3. Check package.json's packageManager field
   try {
     const package_ = await readPackageJson(path.join(root, "package.json"));
     const rawPm = package_["packageManager"];
     const pm = typeof rawPm === "string" ? (rawPm.split("@", 2)[0] ?? "") : "";
-    if (["bun", "npm", "pnpm", "yarn"].includes(pm)) {
+    if (["bun", "deno", "npm", "pnpm", "yarn"].includes(pm)) {
       return pm as PackageManager;
     }
   } catch {
     // Ignore
   }
 
-  // 3. Check npm_config_user_agent (runtime context, least reliable)
+  // 4. Check npm_config_user_agent (runtime context, least reliable)
   const userAgent = process.env["npm_config_user_agent"] ?? "";
   if (userAgent.startsWith("bun")) return "bun";
   if (userAgent.startsWith("pnpm")) return "pnpm";
   if (userAgent.startsWith("yarn")) return "yarn";
   if (userAgent.startsWith("npm")) return "npm";
 
-  // 4. No package manager detected
+  // 5. No package manager detected
   throw new Error(
     "Could not detect package manager. " +
-      "Ensure a lock file (package-lock.json, pnpm-lock.yaml, yarn.lock, or bun.lock) exists in the project root.",
+      "Ensure a lock file (package-lock.json, pnpm-lock.yaml, yarn.lock, bun.lock, or deno.lock) " +
+      "or a config file (deno.json, deno.jsonc) exists in the project root.",
   );
 }
 
@@ -65,6 +84,9 @@ export async function discoverWorkspace(root: string): Promise<Package[]> {
   switch (pm) {
     case "bun": {
       return resolveBunWorkspaces(root);
+    }
+    case "deno": {
+      return resolveDenoWorkspaces(root);
     }
     case "npm": {
       output = execFileSync(
@@ -120,8 +142,56 @@ function getWorkspacePatterns(packageJson: Record<string, unknown>) {
   return [];
 }
 
+function parseDenoJson(content: string): Record<string, unknown> {
+  try {
+    return JSON.parse(content) as Record<string, unknown>;
+  } catch {
+    const stripped = content
+      .replaceAll(/\/\/[^\n]*/g, "")
+      .replaceAll(/,\s*([}\]])/g, "$1");
+    return JSON.parse(stripped) as Record<string, unknown>;
+  }
+}
+
+function parseDenoWorkspacePatterns(config: Record<string, unknown>): string[] {
+  const raw = config["workspace"];
+  if (Array.isArray(raw)) {
+    return raw.filter(
+      (p): p is string => typeof p === "string" && !p.startsWith("!"),
+    );
+  }
+  if (
+    typeof raw === "object" &&
+    raw !== null &&
+    "members" in raw &&
+    Array.isArray(raw.members)
+  ) {
+    return raw.members.filter(
+      (p): p is string => typeof p === "string" && !p.startsWith("!"),
+    );
+  }
+  return [];
+}
+
 function pmBin(pm: string) {
   return pm;
+}
+
+async function readDenoJson(
+  root: string,
+): Promise<Record<string, unknown> | undefined> {
+  const { readFile } = await import("node:fs/promises");
+
+  for (const name of ["deno.json", "deno.jsonc"]) {
+    try {
+      const content = await readFile(path.join(root, name), "utf8");
+      return parseDenoJson(content);
+    } catch {
+      // try next
+    }
+  }
+
+  return undefined;
 }
 
 async function resolveBunWorkspaces(root: string) {
@@ -130,6 +200,18 @@ async function resolveBunWorkspaces(root: string) {
   );
   const patterns = getWorkspacePatterns(rootPackageJson);
 
+  return resolveGlobPatterns(root, patterns);
+}
+
+async function resolveDenoWorkspaces(root: string) {
+  const config = await readDenoJson(root);
+  if (config === undefined) return [];
+
+  const patterns = parseDenoWorkspacePatterns(config);
+  return resolveGlobPatterns(root, patterns);
+}
+
+async function resolveGlobPatterns(root: string, patterns: string[]) {
   const { glob } = await import("node:fs/promises");
   const packagePaths: string[] = [];
   for (const pattern of patterns) {

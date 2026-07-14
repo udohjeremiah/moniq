@@ -4,4 +4,5 @@ export {
   detectPackageManager,
   discoverWorkspace,
   type Package,
+  type PackageManager,
 } from "./workspace.js";
