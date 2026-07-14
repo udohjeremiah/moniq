@@ -9,7 +9,7 @@ import {
 } from "./scripts.js";
 
 /** Moniq configuration. */
-export interface Config {
+export interface UserConfig {
   /** Policies keyed by script name. Maps script names to one or more policies (first match wins). */
   scripts?: Record<string, ScriptPolicy | ScriptPolicy[]>;
 }
@@ -27,8 +27,8 @@ const ConfigType = Type.Object({
   scripts: Type.Optional(scriptsRecordType),
 });
 
-/** Identity helper for type inference. Use in your `moniq.config` file to get full type safety. */
-export function defineConfig(config: Config): Config {
+/** Defines the configuration for moniq. */
+export function defineConfig(config: UserConfig): UserConfig {
   return config;
 }
 
@@ -41,7 +41,7 @@ const CONFIG_FILENAMES = [
   "moniq.config.cts",
 ];
 
-export async function loadConfig(cwd: string): Promise<Config> {
+export async function loadConfig(cwd: string): Promise<UserConfig> {
   const configPath = await findConfig(cwd);
 
   if (configPath === undefined) {
@@ -105,6 +105,6 @@ async function findConfig(startDirectory: string) {
     directory = parent;
   }
 
-  // eslint-disable-next-line unicorn/no-useless-undefined -- required by noImplicitReturns
+  // eslint-disable-next-line unicorn/no-useless-undefined
   return undefined;
 }

@@ -80,15 +80,14 @@ function isPolicyMatch(policy: ScriptPolicy, relativePath: string) {
   );
 }
 
-function pickPolicy(
-  policies: ScriptPolicy[],
-  relativePath: string,
-): ScriptPolicy | undefined {
+function pickPolicy(policies: ScriptPolicy[], relativePath: string) {
   for (const policy of policies) {
     if (isPolicyMatch(policy, relativePath)) {
       return policy;
     }
   }
+
+  // eslint-disable-next-line unicorn/no-useless-undefined
   return undefined;
 }
 

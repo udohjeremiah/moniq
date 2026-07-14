@@ -31,7 +31,7 @@ export function bin(name: string) {
   };
 }
 
-function stripWrappers(tokens: string[]): { remaining: string[] } {
+function stripWrappers(tokens: string[]) {
   let remaining = tokens;
   let isChanged = true;
 

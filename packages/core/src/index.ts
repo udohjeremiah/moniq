@@ -1,4 +1,4 @@
-import { type Config } from "@moniq/config";
+import { type UserConfig } from "@moniq/config";
 import { type Package } from "@moniq/workspace";
 
 import { resolveScriptPolicies } from "./scripts.js";
@@ -15,7 +15,7 @@ export interface Diagnostic {
 }
 
 export async function resolve(
-  config: Config,
+  config: UserConfig,
   root: string,
   packages_: Package[],
 ): Promise<Diagnostic[]> {

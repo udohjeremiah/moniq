@@ -32,7 +32,7 @@ jobs:
       - run: pnpm install
       - run: pnpm run format
 
-  check-types:
+  typecheck:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
@@ -42,7 +42,7 @@ jobs:
           node-version: ">=24"
           cache: pnpm
       - run: pnpm install
-      - run: pnpm run check-types
+      - run: pnpm run typecheck
 
   knip:
     runs-on: ubuntu-latest

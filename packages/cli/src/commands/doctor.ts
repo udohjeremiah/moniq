@@ -1,4 +1,4 @@
-import { type Config, loadConfig } from "@moniq/config";
+import { loadConfig } from "@moniq/config";
 import { discoverWorkspace } from "@moniq/workspace";
 import { styleText } from "node:util";
 
@@ -39,13 +39,11 @@ export async function doctor(): Promise<void> {
 
   // Check 2: Config file exists + valid structure
   try {
-    const config: Config = await loadConfig(cwd);
+    await loadConfig(cwd);
     issues.push({
       message: "moniq.config file found and loadable.",
       severity: "info",
     });
-
-    checkScriptPolicies(config, issues);
   } catch (error) {
     issues.push({
       message: `Failed to load moniq.config: ${String(error)}`,
@@ -89,27 +87,7 @@ export async function doctor(): Promise<void> {
   }
 }
 
-function checkScriptPolicies(config: Config, issues: DoctorIssue[]) {
-  const scripts = config.scripts;
-  if (!scripts) return;
-
-  for (const [name, policyOrArray] of Object.entries(scripts)) {
-    const policies = Array.isArray(policyOrArray)
-      ? policyOrArray
-      : [policyOrArray];
-    for (const policy of policies) {
-      const sev = policy.severity;
-      if (sev !== undefined && !["error", "off", "warn"].includes(sev)) {
-        issues.push({
-          message: `Script policy "${name}" has invalid severity "${sev}".`,
-          severity: "error",
-        });
-      }
-    }
-  }
-}
-
-function formatIssue(issue: DoctorIssue): string {
+function formatIssue(issue: DoctorIssue) {
   if (issue.severity === "error") {
     return `  ${styleText(["bold", "red"], "✘")} ${styleText(["bold", "red"], "ERROR")} ${issue.message}`;
   }
@@ -119,7 +97,7 @@ function formatIssue(issue: DoctorIssue): string {
   return `  ${styleText("cyan", "ℹ")} ${styleText(["bold", "cyan"], "INFO")} ${issue.message}`;
 }
 
-function severityIndex(severity: DoctorIssue["severity"]): number {
+function severityIndex(severity: DoctorIssue["severity"]) {
   if (severity === "error") return 2;
   if (severity === "warn") return 1;
   return 0;

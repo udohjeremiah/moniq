@@ -4,7 +4,7 @@ import { Check, Errors } from "typebox/value";
 /**
  * A single script policy configuration.
  *
- * See the `scripts` field of `Config` for usage.
+ * See the `scripts` field of `UserConfig` for usage.
  */
 export interface ScriptPolicy {
   /**

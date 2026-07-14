@@ -1,4 +1,5 @@
 import { execFileSync } from "node:child_process";
+import { access } from "node:fs/promises";
 import path from "node:path";
 
 import { readPackageJson } from "./package-json.js";
@@ -24,7 +25,6 @@ export async function detectPackageManager(
 
   for (const [lockFile, pm] of Object.entries(lockFileMap)) {
     try {
-      const { access } = await import("node:fs/promises");
       await access(path.join(root, lockFile));
       return pm;
     } catch {
@@ -34,19 +34,13 @@ export async function detectPackageManager(
 
   // 2. Check for deno.json or deno.jsonc (Deno-native projects may not have a lock file)
   //    Deno projects frequently .gitignore deno.lock, so we check the config file too.
-  try {
-    const { access } = await import("node:fs/promises");
-    await access(path.join(root, "deno.json"));
-    return "deno";
-  } catch {
-    // try deno.jsonc
-  }
-  try {
-    const { access } = await import("node:fs/promises");
-    await access(path.join(root, "deno.jsonc"));
-    return "deno";
-  } catch {
-    // continue
+  for (const name of ["deno.json", "deno.jsonc"]) {
+    try {
+      await access(path.join(root, name));
+      return "deno";
+    } catch {
+      // try next
+    }
   }
 
   // 3. Check package.json's packageManager field
@@ -142,7 +136,7 @@ function getWorkspacePatterns(packageJson: Record<string, unknown>) {
   return [];
 }
 
-function parseDenoJson(content: string): Record<string, unknown> {
+function parseDenoJson(content: string) {
   try {
     return JSON.parse(content) as Record<string, unknown>;
   } catch {
@@ -153,7 +147,7 @@ function parseDenoJson(content: string): Record<string, unknown> {
   }
 }
 
-function parseDenoWorkspacePatterns(config: Record<string, unknown>): string[] {
+function parseDenoWorkspacePatterns(config: Record<string, unknown>) {
   const raw = config["workspace"];
   if (Array.isArray(raw)) {
     return raw.filter(
@@ -177,13 +171,10 @@ function pmBin(pm: string) {
   return pm;
 }
 
-async function readDenoJson(
-  root: string,
-): Promise<Record<string, unknown> | undefined> {
-  const { readFile } = await import("node:fs/promises");
-
+async function readDenoJson(root: string) {
   for (const name of ["deno.json", "deno.jsonc"]) {
     try {
+      const { readFile } = await import("node:fs/promises");
       const content = await readFile(path.join(root, name), "utf8");
       return parseDenoJson(content);
     } catch {
@@ -191,6 +182,7 @@ async function readDenoJson(
     }
   }
 
+  // eslint-disable-next-line unicorn/no-useless-undefined
   return undefined;
 }
 
