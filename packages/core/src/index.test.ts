@@ -1,4 +1,4 @@
-import { type Config } from "@moniq/config";
+import { type UserConfig } from "@moniq/config";
 import { mkdtemp, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
@@ -39,7 +39,7 @@ describe("resolve", () => {
       "packages/a": { name: "a", scripts: { build: "tsup" } },
     });
 
-    const config: Config = {
+    const config: UserConfig = {
       scripts: {
         build: { required: true },
       },
@@ -60,7 +60,7 @@ describe("resolve", () => {
       ".": { name: "root", scripts: {} },
     });
 
-    const config: Config = {
+    const config: UserConfig = {
       scripts: {
         build: { required: true },
       },
@@ -85,7 +85,7 @@ describe("resolve", () => {
       ".": { name: "root", scripts: { build: "tsc" } },
     });
 
-    const config: Config = {
+    const config: UserConfig = {
       scripts: {
         build: { command: "tsup" },
       },
@@ -112,7 +112,7 @@ describe("resolve", () => {
       ".": { name: "root", scripts: { build: "tsup" } },
     });
 
-    const config: Config = {
+    const config: UserConfig = {
       scripts: {
         build: { command: "tsup" },
       },
@@ -129,7 +129,7 @@ describe("resolve", () => {
       ".": { name: "root", scripts: { lint: "eslint . --fix" } },
     });
 
-    const config: Config = {
+    const config: UserConfig = {
       scripts: {
         lint: { command: /^eslint\b/ },
       },
@@ -146,7 +146,7 @@ describe("resolve", () => {
       ".": { name: "root", scripts: { build: "tsup --clean" } },
     });
 
-    const config: Config = {
+    const config: UserConfig = {
       scripts: {
         build: { command: (command) => command.startsWith("tsup") },
       },
@@ -164,7 +164,7 @@ describe("resolve", () => {
       "packages/b": { name: "b", scripts: {} },
     });
 
-    const config: Config = {
+    const config: UserConfig = {
       scripts: {
         build: { include: ["packages/a"], required: true },
       },
@@ -186,7 +186,7 @@ describe("resolve", () => {
       "packages/b": { name: "b", scripts: { build: "tsup" } },
     });
 
-    const config: Config = {
+    const config: UserConfig = {
       scripts: {
         build: { exclude: ["packages/b"], required: true },
       },
@@ -209,7 +209,7 @@ describe("resolve", () => {
       "packages/b": { name: "b", scripts: {} },
     });
 
-    const config: Config = {
+    const config: UserConfig = {
       scripts: {
         build: { required: true },
       },
@@ -231,7 +231,7 @@ describe("resolve", () => {
       "packages/a": { name: "a", scripts: { build: "tsup" } },
     });
 
-    const config: Config = {
+    const config: UserConfig = {
       scripts: {
         build: { include: ["."], required: true },
       },
@@ -253,7 +253,7 @@ describe("resolve", () => {
       "packages/a": { name: "a", scripts: { build: "rollup" } },
     });
 
-    const config: Config = {
+    const config: UserConfig = {
       scripts: {
         build: [
           { command: "rollup", include: ["packages/a"] },
@@ -277,7 +277,7 @@ describe("resolve", () => {
       "packages/a": { name: "a", scripts: { build: "rollup" } },
     });
 
-    const config: Config = {
+    const config: UserConfig = {
       scripts: {
         build: [
           { command: "rollup", include: ["packages/a"] },
@@ -301,7 +301,7 @@ describe("resolve", () => {
       "packages/a": { name: "a", scripts: { build: "custom-builder" } },
     });
 
-    const config: Config = {
+    const config: UserConfig = {
       scripts: {
         build: {
           allowCustomCommands: ["packages/a"],
@@ -325,7 +325,7 @@ describe("resolve", () => {
       ".": { name: "root", scripts: {} },
     });
 
-    const config: Config = {
+    const config: UserConfig = {
       scripts: {
         build: { autofix: true, command: "tsup", required: true },
       },
@@ -342,7 +342,7 @@ describe("resolve", () => {
       ".": { name: "root", scripts: {} },
     });
 
-    const config: Config = {
+    const config: UserConfig = {
       scripts: {
         build: { autofix: true, command: /^tsup/, required: true },
       },
@@ -359,7 +359,7 @@ describe("resolve", () => {
       ".": { name: "root", scripts: {} },
     });
 
-    const config: Config = {
+    const config: UserConfig = {
       scripts: {
         build: { required: true, severity: "off" },
       },
@@ -376,7 +376,7 @@ describe("resolve", () => {
       ".": { name: "root", scripts: {} },
     });
 
-    const config: Config = {};
+    const config: UserConfig = {};
 
     const diagnostics = await resolve(config, root, rootPack(root, "."));
     expect(diagnostics).toEqual([]);

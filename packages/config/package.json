@@ -14,7 +14,7 @@
     "build": "tsdown",
     "lint": "eslint . --max-warnings=0",
     "lint:fix": "eslint --fix .",
-    "check-types": "tsc --noEmit",
+    "typecheck": "tsc --noEmit",
     "test": "vitest run"
   },
   "dependencies": {

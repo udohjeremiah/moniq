@@ -6,6 +6,7 @@ import {
   readPackageJson,
 } from "@moniq/workspace";
 import { execFile } from "node:child_process";
+import { access } from "node:fs/promises";
 import path from "node:path";
 import { stdin } from "node:process";
 import { createInterface } from "node:readline/promises";
@@ -16,6 +17,9 @@ import { renderBanner } from "../banner.js";
 const SUPPORTED_LANGS = ["ts", "js", "mjs", "cjs", "mts", "cts"];
 
 const DIVIDER_WIDTH = 44;
+
+const dim = (s: string) => styleText("dim", s);
+const cyan = (s: string) => styleText("cyan", s);
 
 function labelPad(label: string) {
   return label.padEnd(18);
@@ -46,11 +50,8 @@ export async function detectLang(
   // Deno handles TypeScript natively — default to .mts for Node+strip-types compat
   if (pm === "deno") return "mts";
 
-  const rawDependencies = packageJson["dependencies"];
-  const rawDevelopmentDependencies = packageJson["devDependencies"];
   const isModule = packageJson["type"] === "module";
 
-  const { access } = await import("node:fs/promises");
   try {
     await access(path.join(cwd, "tsconfig.json"));
     return isModule ? "ts" : "mts";
@@ -58,25 +59,12 @@ export async function detectLang(
     // no tsconfig
   }
 
-  if (
-    typeof rawDependencies === "object" &&
-    rawDependencies !== null &&
-    Object.hasOwn(rawDependencies, "typescript")
-  ) {
-    return isModule ? "ts" : "mts";
-  }
-
-  if (
-    typeof rawDevelopmentDependencies === "object" &&
-    rawDevelopmentDependencies !== null &&
-    Object.hasOwn(rawDevelopmentDependencies, "typescript")
-  ) {
+  if (hasTypescript(packageJson)) {
     return isModule ? "ts" : "mts";
   }
 
   return isModule ? "js" : "mjs";
 }
-
 export function generateConfig() {
   return STARTER_CONFIG;
 }
@@ -121,77 +109,17 @@ export async function init(options: InitOptions): Promise<void> {
     workspaceLabel = "unknown (workspace detection failed)";
   }
 
-  const isTypeScript = ["cts", "mts", "ts"].includes(lang);
-  const langDisplay = isTypeScript ? "TypeScript" : "JavaScript";
-
-  // Print detection block
-  const dim = (s: string) => styleText("dim", s);
-  const cyan = (s: string) => styleText("cyan", s);
-
-  const sideDashes = (DIVIDER_WIDTH - " Detected ".length) / 2;
-  const topDivider = dim(
-    `  ${"─".repeat(sideDashes)} Detected ${"─".repeat(sideDashes)}`,
-  );
-  const bottomDivider = dim(`  ${"─".repeat(DIVIDER_WIDTH)}`);
-  const labelIndent = " ".repeat(19);
-
-  console.log(topDivider);
-  console.log(`    ${dim(labelPad("Workspace:"))} ${cyan(workspaceLabel)}`);
-  if (workspacePackages.length > 1) {
-    for (const package_ of workspacePackages) {
-      const relativePath = path.relative(cwd, package_.path);
-      const bullet = dim(`• ${relativePath}`);
-      console.log(`    ${labelIndent}${bullet}`);
-    }
-  }
-  console.log(`    ${dim(labelPad("Package Manager:"))} ${cyan(pm)}`);
-  console.log(`    ${dim(labelPad("Language:"))} ${cyan(langDisplay)}`);
-  console.log(bottomDivider);
+  printDetectedInfo(cwd, pm, lang, workspaceLabel, workspacePackages);
   console.log();
 
-  // Install package as devDependency (skip in test mode)
   if (!_cwd) {
-    const stopSpinner = startSpinner(
-      `Installing ${styleText("cyan", "@udohjeremiah/moniq")} as devDependency...`,
-    );
-    try {
-      await installPackage(pm, cwd, options.version);
-      stopSpinner();
-      console.log(
-        `  ${styleText(["bold", "green"], "✔ Installed @udohjeremiah/moniq as devDependency")}`,
-      );
-    } catch (error) {
-      stopSpinner();
-      const errorMessage = `Installation failed: ${String(error)}`;
-      const styledError = styleText("red", `✘ ${errorMessage}`);
-      console.log(`  ${styledError}`);
-      console.log(
-        `  ${styleText("dim", "Make sure you have a working internet connection and try again.")}`,
-      );
-      console.log();
-      process.exitCode = 1;
-      return;
-    }
+    const isInstalled = await handleInstall(pm, cwd, options.version);
+    if (!isInstalled) return;
   }
 
-  // Write config
   const { writeFile } = await import("node:fs/promises");
   await writeFile(configPath, STARTER_CONFIG, "utf8");
-
-  const createdMessage = `✔ Created ${filename}`;
-  console.log(`  ${styleText(["bold", "green"], createdMessage)}`);
-  console.log();
-  console.log(`  ${styleText("dim", "Next steps:")}`);
-  console.log(
-    `   1. ${styleText("dim", "Edit")} ${styleText("cyan", filename)} ${styleText("dim", "to configure your policies.")}`,
-  );
-  console.log(
-    `   2. ${styleText("dim", "Run")} ${styleText("cyan", "moniq check")} ${styleText("dim", "to validate your workspace.")}`,
-  );
-  console.log(
-    `   3. ${styleText("dim", "Run")} ${styleText("cyan", "moniq fix")} ${styleText("dim", "to apply automatic fixes.")}`,
-  );
-  console.log();
+  printCompletion(filename);
 }
 
 async function detectPmAndPackageJson(cwd: string) {
@@ -209,7 +137,8 @@ async function detectPmAndPackageJson(cwd: string) {
     return { pm, rootPackageJson };
   } catch {
     if (pm === "deno") {
-      return { pm, rootPackageJson: {} as PackageJson };
+      const rootPackageJson: PackageJson = {};
+      return { pm, rootPackageJson };
     }
 
     console.log();
@@ -226,7 +155,6 @@ async function detectPmAndPackageJson(cwd: string) {
 }
 
 async function handleExistingConfig(configPath: string, filename: string) {
-  const { access } = await import("node:fs/promises");
   try {
     await access(configPath);
   } catch {
@@ -244,6 +172,43 @@ async function handleExistingConfig(configPath: string, filename: string) {
 
   if (answer.trim().length === 0) return false;
   return answer.toLowerCase() === "y" || answer.toLowerCase() === "yes";
+}
+
+async function handleInstall(pm: string, root: string, version?: string) {
+  const stopSpinner = startSpinner(
+    `Installing ${styleText("cyan", "@udohjeremiah/moniq")} as devDependency...`,
+  );
+  try {
+    await installPackage(pm, root, version);
+    stopSpinner();
+    console.log(
+      `  ${styleText(["bold", "green"], "✔ Installed @udohjeremiah/moniq as devDependency")}`,
+    );
+    return true;
+  } catch (error) {
+    stopSpinner();
+    const errorMessage = `✘ Installation failed: ${String(error)}`;
+    console.log(`  ${styleText("red", errorMessage)}`);
+    console.log(
+      `  ${styleText("dim", "Make sure you have a working internet connection and try again.")}`,
+    );
+    console.log();
+    process.exitCode = 1;
+    return false;
+  }
+}
+
+function hasTypescript(packageJson: PackageJson) {
+  const dependencies = packageJson["dependencies"];
+  const devDependencies = packageJson["devDependencies"];
+  return (
+    (typeof dependencies === "object" &&
+      dependencies !== null &&
+      Object.hasOwn(dependencies, "typescript")) ||
+    (typeof devDependencies === "object" &&
+      devDependencies !== null &&
+      Object.hasOwn(devDependencies, "typescript"))
+  );
 }
 
 function installArguments(pm: string, version?: string) {
@@ -285,7 +250,54 @@ function installPackage(pm: string, root: string, version?: string) {
   });
 }
 
-function startSpinner(text: string): () => void {
+function printCompletion(filename: string) {
+  const createdMessage = `✔ Created ${filename}`;
+  console.log(`  ${styleText(["bold", "green"], createdMessage)}`);
+  console.log();
+  console.log(`  ${styleText("dim", "Next steps:")}`);
+  console.log(
+    `   1. ${styleText("dim", "Edit")} ${styleText("cyan", filename)} ${styleText("dim", "to configure your policies.")}`,
+  );
+  console.log(
+    `   2. ${styleText("dim", "Run")} ${styleText("cyan", "moniq check")} ${styleText("dim", "to validate your workspace.")}`,
+  );
+  console.log(
+    `   3. ${styleText("dim", "Run")} ${styleText("cyan", "moniq fix")} ${styleText("dim", "to apply automatic fixes.")}`,
+  );
+  console.log();
+}
+
+function printDetectedInfo(
+  cwd: string,
+  pm: PackageManager,
+  lang: string,
+  workspaceLabel: string,
+  workspacePackages: { path: string }[],
+) {
+  const isTypeScript = ["cts", "mts", "ts"].includes(lang);
+  const langDisplay = isTypeScript ? "TypeScript" : "JavaScript";
+  const sideDashes = (DIVIDER_WIDTH - " Detected ".length) / 2;
+  const topDivider = dim(
+    `  ${"─".repeat(sideDashes)} Detected ${"─".repeat(sideDashes)}`,
+  );
+  const bottomDivider = dim(`  ${"─".repeat(DIVIDER_WIDTH)}`);
+  const labelIndent = " ".repeat(19);
+
+  console.log(topDivider);
+  console.log(`    ${dim(labelPad("Workspace:"))} ${cyan(workspaceLabel)}`);
+  if (workspacePackages.length > 1) {
+    for (const package_ of workspacePackages) {
+      const relativePath = path.relative(cwd, package_.path);
+      const bullet = dim(`• ${relativePath}`);
+      console.log(`    ${labelIndent}${bullet}`);
+    }
+  }
+  console.log(`    ${dim(labelPad("Package Manager:"))} ${cyan(pm)}`);
+  console.log(`    ${dim(labelPad("Language:"))} ${cyan(langDisplay)}`);
+  console.log(bottomDivider);
+}
+
+function startSpinner(text: string) {
   const frames = ["⠋", "⠙", "⠸", "⠴", "⠦", "⠧"];
   let index = 0;
   const id = setInterval(() => {
