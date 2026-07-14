@@ -2,6 +2,7 @@ import {
   detectPackageManager,
   discoverWorkspace,
   type PackageJson,
+  type PackageManager,
   readPackageJson,
 } from "@moniq/workspace";
 import { execFile } from "node:child_process";
@@ -37,7 +38,14 @@ export interface InitOptions {
   version?: string;
 }
 
-export async function detectLang(cwd: string, packageJson: PackageJson) {
+export async function detectLang(
+  cwd: string,
+  packageJson: PackageJson,
+  pm?: PackageManager,
+) {
+  // Deno handles TypeScript natively — default to .mts for Node+strip-types compat
+  if (pm === "deno") return "mts";
+
   const rawDependencies = packageJson["dependencies"];
   const rawDevelopmentDependencies = packageJson["devDependencies"];
   const isModule = packageJson["type"] === "module";
@@ -80,10 +88,11 @@ export async function init(options: InitOptions): Promise<void> {
 
   console.log(renderBanner());
 
-  const rootPackageJson = await readRootPackageJson(cwd);
-  if (rootPackageJson === undefined) return;
+  const pmResult = await detectPmAndPackageJson(cwd);
+  if (!pmResult) return;
+  const { pm, rootPackageJson } = pmResult;
 
-  const lang = explicitLang ?? (await detectLang(cwd, rootPackageJson));
+  const lang = explicitLang ?? (await detectLang(cwd, rootPackageJson, pm));
 
   if (!SUPPORTED_LANGS.includes(lang)) {
     const unsupportedMessage = `Unsupported --lang "${lang}". Supported: ${SUPPORTED_LANGS.join(", ")}`;
@@ -99,7 +108,7 @@ export async function init(options: InitOptions): Promise<void> {
   const canProceed = await handleExistingConfig(configPath, filename);
   if (!canProceed) return;
 
-  // Detect everything
+  // Detect workspace
   let workspaceLabel = "single package";
   let workspacePackages: { path: string }[] = [];
   try {
@@ -111,8 +120,6 @@ export async function init(options: InitOptions): Promise<void> {
   } catch {
     workspaceLabel = "unknown (workspace detection failed)";
   }
-
-  const pm = await detectPackageManager(cwd);
 
   const isTypeScript = ["cts", "mts", "ts"].includes(lang);
   const langDisplay = isTypeScript ? "TypeScript" : "JavaScript";
@@ -187,6 +194,37 @@ export async function init(options: InitOptions): Promise<void> {
   console.log();
 }
 
+async function detectPmAndPackageJson(cwd: string) {
+  let pm: PackageManager;
+  try {
+    pm = await detectPackageManager(cwd);
+  } catch {
+    pm = "npm";
+  }
+
+  try {
+    const rootPackageJson = await readPackageJson(
+      path.join(cwd, "package.json"),
+    );
+    return { pm, rootPackageJson };
+  } catch {
+    if (pm === "deno") {
+      return { pm, rootPackageJson: {} as PackageJson };
+    }
+
+    console.log();
+    console.log(
+      `  ${styleText("yellow", "⚠ No package.json found in current directory.")}`,
+    );
+    console.log(
+      `  Create one first, then run ${styleText("cyan", "moniq init")} again.`,
+    );
+    console.log();
+    process.exitCode = 1;
+    return;
+  }
+}
+
 async function handleExistingConfig(configPath: string, filename: string) {
   const { access } = await import("node:fs/promises");
   try {
@@ -216,6 +254,9 @@ function installArguments(pm: string, version?: string) {
     case "bun": {
       return ["add", "--dev", spec];
     }
+    case "deno": {
+      return ["add", "-D", `npm:${spec}`];
+    }
     case "npm": {
       return ["install", "--save-dev", spec];
     }
@@ -242,23 +283,6 @@ function installPackage(pm: string, root: string, version?: string) {
     });
     child.on("error", reject);
   });
-}
-
-async function readRootPackageJson(cwd: string) {
-  try {
-    return await readPackageJson(path.join(cwd, "package.json"));
-  } catch {
-    console.log();
-    console.log(
-      `  ${styleText("yellow", "⚠ No package.json found in current directory.")}`,
-    );
-    console.log(
-      `  Create one first, then run ${styleText("cyan", "moniq init")} again.`,
-    );
-    console.log();
-    process.exitCode = 1;
-    return;
-  }
 }
 
 function startSpinner(text: string): () => void {
