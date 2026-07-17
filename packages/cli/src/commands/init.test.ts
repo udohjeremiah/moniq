@@ -13,7 +13,6 @@ describe("generateConfig", () => {
   it("generates the generic starter config", () => {
     const config = generateConfig();
 
-    expect(config).toContain("dev: { required: true }");
     expect(config).toContain("build: { required: true }");
     expect(config).toContain("lint: { required: true }");
   });

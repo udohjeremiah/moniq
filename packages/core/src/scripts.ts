@@ -109,6 +109,7 @@ async function resolvePolicy(
   // required
   if (policy.required !== false && !hasScript) {
     diagnostics.push({
+      domain: "scripts",
       fix:
         policy.autofix && typeof policy.command === "string"
           ? policy.command
@@ -116,6 +117,8 @@ async function resolvePolicy(
       message: `Missing required script "${scriptName}"`,
       packageName: packageDisplayName,
       packagePath: package_.path,
+      ruleId: "scripts/missing",
+      ruleName: "Missing required script",
       scriptName,
       severity,
     });
@@ -145,6 +148,7 @@ async function resolvePolicy(
 
   diagnostics.push({
     actual: actualCommand,
+    domain: "scripts",
     expected: typeof policy.command === "string" ? policy.command : undefined,
     fix:
       policy.autofix && typeof policy.command === "string"
@@ -153,6 +157,8 @@ async function resolvePolicy(
     message: `Unexpected command for script "${scriptName}"`,
     packageName: packageDisplayName,
     packagePath: package_.path,
+    ruleId: "scripts/command-mismatch",
+    ruleName: "Unexpected command",
     scriptName,
     severity,
   });

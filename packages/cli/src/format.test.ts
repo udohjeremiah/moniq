@@ -1,41 +1,61 @@
-import { type Diagnostic } from "@moniq/core";
+import { type Diagnostic, type Report } from "@moniq/core";
 import { describe, expect, it } from "vitest";
 
-import { formatDiagnostics } from "./format.js";
+import { formatReport } from "./format.js";
 
 const makeDiagnostic = (overrides?: Partial<Diagnostic>): Diagnostic => ({
+  domain: "scripts",
   message: 'Missing required script "build"',
   packageName: "@moniq/core",
   packagePath: "/packages/core",
+  ruleId: "scripts/missing",
+  ruleName: "Missing required script",
   severity: "error",
   ...overrides,
 });
 
+function makeReport(diagnostics: Diagnostic[]): Report {
+  const errors = diagnostics.filter((d) => d.severity === "error").length;
+  const warnings = diagnostics.filter((d) => d.severity === "warn").length;
+  return {
+    results: diagnostics,
+    summary: {
+      errors,
+      passed: errors === 0,
+      total: diagnostics.length,
+      warnings,
+    },
+    tool: { name: "moniq" },
+  };
+}
+
 describe("formatPretty", () => {
   it("returns success message when no diagnostics", () => {
-    const result = formatDiagnostics([], { format: "pretty" });
+    const result = formatReport(makeReport([]), { format: "pretty" });
     expect(result).toContain("No issues found");
   });
 
   it("formats a single error diagnostic", () => {
-    const result = formatDiagnostics([makeDiagnostic()], { format: "pretty" });
+    const result = formatReport(makeReport([makeDiagnostic()]), {
+      format: "pretty",
+    });
     expect(result).toContain("ERROR");
     expect(result).toContain("Missing required script");
   });
 
   it("includes fix suggestion when present", () => {
     const d = makeDiagnostic({ fix: "eslint .", severity: "warn" });
-    const result = formatDiagnostics([d], { format: "pretty" });
+    const result = formatReport(makeReport([d]), { format: "pretty" });
     expect(result).toContain("Fix:");
     expect(result).toContain("eslint .");
   });
 
   it("groups diagnostics by package", () => {
-    const result = formatDiagnostics(
-      [
+    const result = formatReport(
+      makeReport([
         makeDiagnostic({ message: "Issue 1", packageName: "pkg-a" }),
         makeDiagnostic({ message: "Issue 2", packageName: "pkg-b" }),
-      ],
+      ]),
       { format: "pretty" },
     );
     expect(result).toContain("pkg-a");
@@ -43,8 +63,8 @@ describe("formatPretty", () => {
   });
 
   it("shows expected/actual when provided", () => {
-    const result = formatDiagnostics(
-      [makeDiagnostic({ actual: "tsc", expected: "tsc --noEmit" })],
+    const result = formatReport(
+      makeReport([makeDiagnostic({ actual: "tsc", expected: "tsc --noEmit" })]),
       { format: "pretty" },
     );
     expect(result).toContain("tsc --noEmit");
@@ -52,18 +72,19 @@ describe("formatPretty", () => {
   });
 
   it("shows warning badge", () => {
-    const result = formatDiagnostics([makeDiagnostic({ severity: "warn" })], {
-      format: "pretty",
-    });
+    const result = formatReport(
+      makeReport([makeDiagnostic({ severity: "warn" })]),
+      { format: "pretty" },
+    );
     expect(result).toContain("WARN");
   });
 
   it("shows summary line at the end", () => {
-    const result = formatDiagnostics(
-      [
+    const result = formatReport(
+      makeReport([
         makeDiagnostic({ severity: "error" }),
         makeDiagnostic({ message: "Other", severity: "warn" }),
-      ],
+      ]),
       { format: "pretty" },
     );
     expect(result).toContain("Found 2 issue(s)");
@@ -75,18 +96,21 @@ describe("formatPretty", () => {
 describe("formatPretty dry-run", () => {
   it("shows Would fix: instead of Fix: when isDryRun is true", () => {
     const d = makeDiagnostic({ fix: "tsup" });
-    const result = formatDiagnostics([d], { format: "pretty", isDryRun: true });
+    const result = formatReport(makeReport([d]), {
+      format: "pretty",
+      isDryRun: true,
+    });
     expect(result).toContain("Would fix:");
     expect(result).not.toContain("Fix:");
     expect(result).toContain("tsup");
   });
 
   it("includes dry-run summary line when fixes are available", () => {
-    const result = formatDiagnostics(
-      [
+    const result = formatReport(
+      makeReport([
         makeDiagnostic({ fix: "eslint .", severity: "error" }),
         makeDiagnostic({ fix: "tsup", severity: "error" }),
-      ],
+      ]),
       { format: "pretty", isDryRun: true },
     );
     expect(result).toContain("Dry-run:");
@@ -95,35 +119,42 @@ describe("formatPretty dry-run", () => {
 
   it("shows Fix: normally when isDryRun is not set", () => {
     const d = makeDiagnostic({ fix: "tsup" });
-    const result = formatDiagnostics([d], { format: "pretty" });
+    const result = formatReport(makeReport([d]), { format: "pretty" });
     expect(result).toContain("Fix:");
     expect(result).not.toContain("Would fix:");
   });
 });
 
 describe("formatJson", () => {
-  it("returns valid JSON array", () => {
-    const result = formatDiagnostics([makeDiagnostic()], { format: "json" });
-    const parsed = JSON.parse(result) as Diagnostic[];
-    expect(Array.isArray(parsed)).toBe(true);
-    expect(parsed[0]?.message).toBe('Missing required script "build"');
+  it("returns valid JSON with tool, summary, results", () => {
+    const report = makeReport([makeDiagnostic()]);
+    const result = formatReport(report, { format: "json" });
+    const parsed = JSON.parse(result) as Report;
+    expect(parsed.tool).toEqual({ name: "moniq" });
+    expect(parsed.summary.total).toBe(1);
+    expect(parsed.summary.passed).toBe(false);
+    expect(parsed.results[0]?.message).toBe('Missing required script "build"');
   });
 
-  it("returns empty array for no diagnostics", () => {
-    const result = formatDiagnostics([], { format: "json" });
-    const parsed = JSON.parse(result) as Diagnostic[];
-    expect(parsed).toEqual([]);
+  it("returns empty results for no diagnostics", () => {
+    const report = makeReport([]);
+    const result = formatReport(report, { format: "json" });
+    const parsed = JSON.parse(result) as Report;
+    expect(parsed.results).toEqual([]);
+    expect(parsed.summary.passed).toBe(true);
   });
 });
 
-describe("formatDiagnostics", () => {
+describe("formatReport", () => {
   it("defaults to pretty format", () => {
-    const result = formatDiagnostics([]);
+    const result = formatReport(makeReport([]));
     expect(result).toContain("No issues found");
   });
 
   it("returns JSON when format is json", () => {
-    const result = formatDiagnostics([makeDiagnostic()], { format: "json" });
+    const result = formatReport(makeReport([makeDiagnostic()]), {
+      format: "json",
+    });
     expect(() => {
       JSON.parse(result);
     }).not.toThrow();

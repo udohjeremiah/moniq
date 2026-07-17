@@ -1,62 +1,27 @@
+/* eslint-disable unicorn/prefer-string-raw */
+
 import { styleText } from "node:util";
 
-const colorFns: ((s: string) => string)[] = [
-  (s) => styleText("cyan", s),
-  (s) => styleText("magenta", s),
-  (s) => styleText("green", s),
-  (s) => styleText("yellow", s),
-  (s) => styleText("blue", s),
-];
-
-const letterRows: string[][] = [
-  // M
-  [
-    "███╗   ███╗",
-    "████╗ ████║",
-    "██╔████╔██║",
-    "██║╚██╔╝██║",
-    "██║ ╚═╝ ██║",
-    "╚═╝     ╚═╝",
-  ],
-  // O
-  [
-    " ██████╗ ",
-    "██╔═══██╗",
-    "██║   ██║",
-    "██║   ██║",
-    "╚██████╔╝",
-    " ╚═════╝ ",
-  ],
-  // N
-  [
-    "███╗   ██╗",
-    "████╗  ██║",
-    "██╔██╗ ██║",
-    "██║╚██╗██║",
-    "██║ ╚████║",
-    "╚═╝  ╚═══╝",
-  ],
-  // I
-  ["██╗", "██║", "██║", "██║", "██║", "╚═╝"],
-  // Q
-  [
-    " ██████╗ ",
-    "██╔═══██╗",
-    "██║   ██║",
-    "██║   ██║",
-    "╚██████╔╝",
-    " ╚════╝╲╲ ",
-  ],
+const BANNER_ROWS = [
+  ",---.    ,---.    ,-----.    ,---.   .--..-./`)     ,-----.",
+  "|    \\  /    |  .'  .-,  '.  |    \\  |  |\\ .-.')  .'  .-,  '.",
+  "|  ,  \\/  ,  | / ,-.|  \\ _ \\ |  ,  \\ |  |/ `-' \\ / ,-.|  \\ _ \\",
+  "|  |\\_   /|  |;  \\  '_ /  | :|  |\\_ \\|  | `-'`\"`;  \\  '_ /  | :",
+  "|  _( )_/ |  ||  _`,/ \\ _/  ||  _( )_\\  | .---. |  _`,/ \\ _/  |",
+  "| (_ o _) |  |: (  '\\_/ \\   ;| (_ o _)  | |   | : (  '\\_/ \\   ;",
+  '|  (_,_)  |  | \\ `"/  \\  ) / |  (_,_)\\  | |   |  \\ `"/  \\  )  \\',
+  "|  |      |  |  '. \\_/``\".'  |  |    |  | |   |   '. \\_/``\"/)  )",
+  "'--'      '--'    '-----'    '--'    '--' '---'     '-----' `-'",
 ];
 
 const DESCRIPTION =
   "Policy-driven workspace linter for JavaScript/TypeScript monorepos.";
 
 export function renderBanner() {
-  const lines: string[] = [""];
+  const lines = [""];
 
-  for (let rowIndex = 0; rowIndex < 6; rowIndex++) {
-    lines.push(assembleRow(rowIndex));
+  for (const row of BANNER_ROWS) {
+    lines.push(styleText("cyan", row));
   }
 
   const description = styleText("bold", DESCRIPTION);
@@ -64,26 +29,4 @@ export function renderBanner() {
   lines.push(description, "");
 
   return lines.join("\n");
-}
-
-function assembleRow(rowIndex: number) {
-  let row = "";
-
-  for (let columnIndex = 0; columnIndex < 5; columnIndex++) {
-    row += rowPart(columnIndex, rowIndex);
-    if (columnIndex < 4) {
-      row += "  ";
-    }
-  }
-
-  return row;
-}
-
-function rowPart(columnIndex: number, rowIndex: number) {
-  const rows = letterRows.at(columnIndex);
-  const colorFunction = colorFns.at(columnIndex);
-  if (rows === undefined || colorFunction === undefined) return "";
-
-  const line = rows.at(rowIndex);
-  return line === undefined ? "" : colorFunction(line);
 }

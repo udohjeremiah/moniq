@@ -4,6 +4,9 @@
   "workspaces": {
     ".": {
       "ignore": [".agents/**"]
+    },
+    "packages/docs": {
+      "ignore": ["**/.vitepress/cache/**"]
     }
   }
 }

@@ -32,7 +32,7 @@ function rootPack(root: string, ...relativePaths: string[]) {
 }
 
 describe("resolve", () => {
-  it("returns no diagnostics when all required scripts exist", async () => {
+  it("returns report with no results when all required scripts exist", async () => {
     const root = await createTemporaryDirectory();
     await createFixture(root, {
       ".": { name: "root", scripts: { build: "tsup" } },
@@ -45,12 +45,15 @@ describe("resolve", () => {
       },
     };
 
-    const diagnostics = await resolve(
+    const report = await resolve(
       config,
       root,
       rootPack(root, ".", "packages/a"),
     );
-    expect(diagnostics).toEqual([]);
+    expect(report.results).toEqual([]);
+    expect(report.summary.passed).toBe(true);
+    expect(report.summary.total).toBe(0);
+    expect(report.tool.name).toBe("moniq");
     await rm(root, { recursive: true });
   });
 
@@ -66,16 +69,21 @@ describe("resolve", () => {
       },
     };
 
-    const diagnostics = await resolve(config, root, rootPack(root, "."));
-    expect(diagnostics).toEqual([
+    const report = await resolve(config, root, rootPack(root, "."));
+    expect(report.results).toEqual([
       {
+        domain: "scripts",
         message: 'Missing required script "build"',
         packageName: "root",
         packagePath: path.join(root, "."),
+        ruleId: "scripts/missing",
+        ruleName: "Missing required script",
         scriptName: "build",
         severity: "error",
       },
     ]);
+    expect(report.summary.passed).toBe(false);
+    expect(report.summary.errors).toBe(1);
     await rm(root, { recursive: true });
   });
 
@@ -91,14 +99,17 @@ describe("resolve", () => {
       },
     };
 
-    const diagnostics = await resolve(config, root, rootPack(root, "."));
-    expect(diagnostics).toEqual([
+    const report = await resolve(config, root, rootPack(root, "."));
+    expect(report.results).toEqual([
       {
         actual: "tsc",
+        domain: "scripts",
         expected: "tsup",
         message: 'Unexpected command for script "build"',
         packageName: "root",
         packagePath: path.join(root, "."),
+        ruleId: "scripts/command-mismatch",
+        ruleName: "Unexpected command",
         scriptName: "build",
         severity: "error",
       },
@@ -118,8 +129,8 @@ describe("resolve", () => {
       },
     };
 
-    const diagnostics = await resolve(config, root, rootPack(root, "."));
-    expect(diagnostics).toEqual([]);
+    const report = await resolve(config, root, rootPack(root, "."));
+    expect(report.results).toEqual([]);
     await rm(root, { recursive: true });
   });
 
@@ -135,8 +146,8 @@ describe("resolve", () => {
       },
     };
 
-    const diagnostics = await resolve(config, root, rootPack(root, "."));
-    expect(diagnostics).toEqual([]);
+    const report = await resolve(config, root, rootPack(root, "."));
+    expect(report.results).toEqual([]);
     await rm(root, { recursive: true });
   });
 
@@ -152,8 +163,8 @@ describe("resolve", () => {
       },
     };
 
-    const diagnostics = await resolve(config, root, rootPack(root, "."));
-    expect(diagnostics).toEqual([]);
+    const report = await resolve(config, root, rootPack(root, "."));
+    expect(report.results).toEqual([]);
     await rm(root, { recursive: true });
   });
 
@@ -170,12 +181,12 @@ describe("resolve", () => {
       },
     };
 
-    const diagnostics = await resolve(
+    const report = await resolve(
       config,
       root,
       rootPack(root, "packages/a", "packages/b"),
     );
-    expect(diagnostics).toEqual([]);
+    expect(report.results).toEqual([]);
     await rm(root, { recursive: true });
   });
 
@@ -192,13 +203,13 @@ describe("resolve", () => {
       },
     };
 
-    const diagnostics = await resolve(
+    const report = await resolve(
       config,
       root,
       rootPack(root, "packages/a", "packages/b"),
     );
-    expect(diagnostics).toHaveLength(1);
-    expect(diagnostics[0]?.packageName).toBe("a");
+    expect(report.results).toHaveLength(1);
+    expect(report.results[0]?.packageName).toBe("a");
     await rm(root, { recursive: true });
   });
 
@@ -215,12 +226,12 @@ describe("resolve", () => {
       },
     };
 
-    const diagnostics = await resolve(
+    const report = await resolve(
       config,
       root,
       rootPack(root, "packages/a", "packages/b"),
     );
-    expect(diagnostics).toHaveLength(2);
+    expect(report.results).toHaveLength(2);
     await rm(root, { recursive: true });
   });
 
@@ -237,13 +248,13 @@ describe("resolve", () => {
       },
     };
 
-    const diagnostics = await resolve(
+    const report = await resolve(
       config,
       root,
       rootPack(root, ".", "packages/a"),
     );
-    expect(diagnostics).toHaveLength(1);
-    expect(diagnostics[0]?.packageName).toBe("root");
+    expect(report.results).toHaveLength(1);
+    expect(report.results[0]?.packageName).toBe("root");
     await rm(root, { recursive: true });
   });
 
@@ -262,12 +273,8 @@ describe("resolve", () => {
       },
     };
 
-    const diagnostics = await resolve(
-      config,
-      root,
-      rootPack(root, "packages/a"),
-    );
-    expect(diagnostics).toEqual([]);
+    const report = await resolve(config, root, rootPack(root, "packages/a"));
+    expect(report.results).toEqual([]);
     await rm(root, { recursive: true });
   });
 
@@ -286,12 +293,8 @@ describe("resolve", () => {
       },
     };
 
-    const diagnostics = await resolve(
-      config,
-      root,
-      rootPack(root, "packages/a"),
-    );
-    expect(diagnostics).toEqual([]);
+    const report = await resolve(config, root, rootPack(root, "packages/a"));
+    expect(report.results).toEqual([]);
     await rm(root, { recursive: true });
   });
 
@@ -310,12 +313,8 @@ describe("resolve", () => {
       },
     };
 
-    const diagnostics = await resolve(
-      config,
-      root,
-      rootPack(root, "packages/a"),
-    );
-    expect(diagnostics).toEqual([]);
+    const report = await resolve(config, root, rootPack(root, "packages/a"));
+    expect(report.results).toEqual([]);
     await rm(root, { recursive: true });
   });
 
@@ -331,8 +330,8 @@ describe("resolve", () => {
       },
     };
 
-    const diagnostics = await resolve(config, root, rootPack(root, "."));
-    expect(diagnostics[0]?.fix).toBe("tsup");
+    const report = await resolve(config, root, rootPack(root, "."));
+    expect(report.results[0]?.fix).toBe("tsup");
     await rm(root, { recursive: true });
   });
 
@@ -348,8 +347,8 @@ describe("resolve", () => {
       },
     };
 
-    const diagnostics = await resolve(config, root, rootPack(root, "."));
-    expect(diagnostics[0]?.fix).toBeUndefined();
+    const report = await resolve(config, root, rootPack(root, "."));
+    expect(report.results[0]?.fix).toBeUndefined();
     await rm(root, { recursive: true });
   });
 
@@ -365,8 +364,8 @@ describe("resolve", () => {
       },
     };
 
-    const diagnostics = await resolve(config, root, rootPack(root, "."));
-    expect(diagnostics).toEqual([]);
+    const report = await resolve(config, root, rootPack(root, "."));
+    expect(report.results).toEqual([]);
     await rm(root, { recursive: true });
   });
 
@@ -378,8 +377,8 @@ describe("resolve", () => {
 
     const config: UserConfig = {};
 
-    const diagnostics = await resolve(config, root, rootPack(root, "."));
-    expect(diagnostics).toEqual([]);
+    const report = await resolve(config, root, rootPack(root, "."));
+    expect(report.results).toEqual([]);
     await rm(root, { recursive: true });
   });
 });
