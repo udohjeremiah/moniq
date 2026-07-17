@@ -27,11 +27,6 @@ const ConfigType = Type.Object({
   scripts: Type.Optional(scriptsRecordType),
 });
 
-/** Defines the configuration for moniq. */
-export function defineConfig(config: UserConfig): UserConfig {
-  return config;
-}
-
 const CONFIG_FILENAMES = [
   "moniq.config.ts",
   "moniq.config.js",
@@ -41,14 +36,53 @@ const CONFIG_FILENAMES = [
   "moniq.config.cts",
 ];
 
-export async function loadConfig(cwd: string): Promise<UserConfig> {
-  const configPath = await findConfig(cwd);
+export class ConfigNotFoundError extends Error {
+  override name = "ConfigNotFoundError";
 
-  if (configPath === undefined) {
-    throw new Error(
-      `No moniq.config file found in or above ${cwd}. Create one or run \`moniq init\` to generate a starter config.`,
+  constructor(filenames: string) {
+    super(
+      [
+        "No Moniq configuration found.",
+        "",
+        "Expected one of:",
+        filenames,
+        "",
+        "Create one by running:",
+        "",
+        "  moniq init",
+      ].join("\n"),
     );
   }
+}
+
+/** Defines the configuration for moniq. */
+export function defineConfig(config: UserConfig): UserConfig {
+  return config;
+}
+
+export async function loadConfig(root: string): Promise<UserConfig> {
+  const found: string[] = [];
+
+  for (const name of CONFIG_FILENAMES) {
+    if (await exists(path.join(root, name))) {
+      found.push(name);
+    }
+  }
+
+  if (found.length > 1) {
+    throw new Error(
+      `Multiple moniq.config files found in ${root}: ${found.join(", ")}. Remove all but one.`,
+    );
+  }
+
+  if (found.length === 0) {
+    throw new ConfigNotFoundError(
+      CONFIG_FILENAMES.map((name) => `- ${name}`).join("\n"),
+    );
+  }
+
+  // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+  const configPath = path.join(root, found[0]!);
 
   const module_ = (await import(configPath)) as Record<string, unknown>;
   const raw = module_["default"] ?? module_;
@@ -73,38 +107,4 @@ export async function loadConfig(cwd: string): Promise<UserConfig> {
 async function exists(filePath: string) {
   const { existsSync } = await import("node:fs");
   return existsSync(filePath);
-}
-
-async function findConfig(startDirectory: string) {
-  let directory = path.resolve(startDirectory);
-  let isRootReached = false;
-
-  while (!isRootReached) {
-    const found: string[] = [];
-
-    for (const name of CONFIG_FILENAMES) {
-      if (await exists(path.join(directory, name))) {
-        found.push(name);
-      }
-    }
-
-    if (found.length > 1) {
-      throw new Error(
-        `Multiple moniq.config files found in ${directory}: ${found.join(", ")}. Remove all but one.`,
-      );
-    }
-
-    if (found.length === 1) {
-      const name = found[0];
-      if (name === undefined) continue;
-      return path.join(directory, name);
-    }
-
-    const parent = path.dirname(directory);
-    isRootReached = parent === directory;
-    directory = parent;
-  }
-
-  // eslint-disable-next-line unicorn/no-useless-undefined
-  return undefined;
 }

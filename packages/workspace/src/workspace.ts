@@ -4,6 +4,18 @@ import path from "node:path";
 
 import { readPackageJson } from "./package-json.js";
 
+const WORKSPACE_MARKERS = [
+  "package-lock.json",
+  "pnpm-lock.yaml",
+  "pnpm-workspace.yaml",
+  "yarn.lock",
+  "bun.lock",
+  "bun.lockb",
+  "deno.lock",
+  "deno.json",
+  "deno.jsonc",
+];
+
 export interface Package {
   path: string;
 }
@@ -57,10 +69,10 @@ export async function detectPackageManager(
 
   // 4. Check npm_config_user_agent (runtime context, least reliable)
   const userAgent = process.env["npm_config_user_agent"] ?? "";
-  if (userAgent.startsWith("bun")) return "bun";
+  if (userAgent.startsWith("npm")) return "npm";
   if (userAgent.startsWith("pnpm")) return "pnpm";
   if (userAgent.startsWith("yarn")) return "yarn";
-  if (userAgent.startsWith("npm")) return "npm";
+  if (userAgent.startsWith("bun")) return "bun";
 
   // 5. No package manager detected
   throw new Error(
@@ -118,6 +130,43 @@ export async function discoverWorkspace(root: string): Promise<Package[]> {
       }));
     }
   }
+}
+
+export async function findWorkspaceRoot(cwd: string): Promise<string> {
+  let directory = path.resolve(cwd);
+  let isRootReached = false;
+
+  while (!isRootReached) {
+    for (const marker of WORKSPACE_MARKERS) {
+      try {
+        await access(path.join(directory, marker));
+        return directory;
+      } catch {
+        // try next marker
+      }
+    }
+
+    try {
+      const package_ = await readPackageJson(
+        path.join(directory, "package.json"),
+      );
+      if (package_["workspaces"] !== undefined) {
+        return directory;
+      }
+    } catch {
+      // no package.json — keep walking
+    }
+
+    const parent = path.dirname(directory);
+    isRootReached = parent === directory;
+    directory = parent;
+  }
+
+  throw new Error(
+    "Could not find workspace root. " +
+      "Ensure a lock file (package-lock.json, pnpm-lock.yaml, yarn.lock, bun.lock, or deno.lock) " +
+      "or a workspace config file exists in the project root.",
+  );
 }
 
 function getWorkspacePatterns(packageJson: Record<string, unknown>) {

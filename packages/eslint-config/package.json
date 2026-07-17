@@ -9,7 +9,6 @@
   },
   "dependencies": {
     "@eslint/js": "^10",
-    "eslint": "^10",
     "eslint-config-prettier": "^10",
     "eslint-import-resolver-typescript": "^4",
     "eslint-plugin-depend": "^1",

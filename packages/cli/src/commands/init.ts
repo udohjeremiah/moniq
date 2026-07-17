@@ -25,11 +25,11 @@ function labelPad(label: string) {
   return label.padEnd(18);
 }
 
-const STARTER_CONFIG = `import { defineConfig } from "@udohjeremiah/moniq";
+const STARTER_CONFIG = `\
+import { defineConfig } from "@udohjeremiah/moniq";
 
 export default defineConfig({
   scripts: {
-    dev: { required: true },
     build: { required: true },
     lint: { required: true },
   },

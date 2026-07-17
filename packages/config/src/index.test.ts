@@ -3,7 +3,7 @@ import { tmpdir } from "node:os";
 import path from "node:path";
 import { describe, expect, it } from "vitest";
 
-import { defineConfig, loadConfig } from "./index.js";
+import { ConfigNotFoundError, defineConfig, loadConfig } from "./index.js";
 
 async function createSubdirectory(parent: string, sub: string) {
   const { mkdir } = await import("node:fs/promises");
@@ -59,7 +59,7 @@ describe("loadConfig", () => {
     await rm(directory, { recursive: true });
   });
 
-  it("walks up directories to find a config file", async () => {
+  it("does not walk up directories — config must be in the given directory", async () => {
     const directory = await createTemporaryDirectory();
     const subdirectory = path.join(directory, "packages", "my-app");
     await createSubdirectory(directory, "packages/my-app");
@@ -74,13 +74,7 @@ describe("loadConfig", () => {
       ].join("\n"),
     );
 
-    const config = await loadConfig(subdirectory);
-
-    expect(config).toEqual({
-      scripts: {
-        build: { required: true },
-      },
-    });
+    await expect(loadConfig(subdirectory)).rejects.toThrow(ConfigNotFoundError);
     await rm(directory, { recursive: true });
   });
 
@@ -143,11 +137,12 @@ describe("loadConfig", () => {
     await rm(directory, { recursive: true });
   });
 
-  it("throws when no config file is found", async () => {
+  it("throws ConfigNotFoundError when no config file is found", async () => {
     const directory = await createTemporaryDirectory();
 
+    await expect(loadConfig(directory)).rejects.toThrow(ConfigNotFoundError);
     await expect(loadConfig(directory)).rejects.toThrow(
-      /No moniq\.config file found/,
+      /No Moniq configuration found/,
     );
     await rm(directory, { recursive: true });
   });

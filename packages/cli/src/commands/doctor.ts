@@ -1,5 +1,5 @@
 import { loadConfig } from "@moniq/config";
-import { discoverWorkspace } from "@moniq/workspace";
+import { discoverWorkspace, findWorkspaceRoot } from "@moniq/workspace";
 import { styleText } from "node:util";
 
 interface DoctorIssue {
@@ -13,9 +13,28 @@ export async function doctor(): Promise<void> {
 
   console.log(styleText("bold", "Configuration Doctor"));
 
-  // Check 1: Workspace is detectable
+  // Check 0: Workspace root is detectable
+  let root: string;
   try {
-    const packages = await discoverWorkspace(cwd);
+    root = await findWorkspaceRoot(cwd);
+    issues.push({
+      message: `Workspace root detected at ${root}.`,
+      severity: "info",
+    });
+  } catch {
+    issues.push({
+      message:
+        "Could not detect workspace root. Ensure a lock file or workspace config file exists.",
+      severity: "error",
+    });
+    root = cwd;
+  }
+
+  console.log();
+
+  // Check 1: Workspace packages are detectable
+  try {
+    const packages = await discoverWorkspace(root);
     const packageCount = packages.length;
     if (packageCount === 0) {
       issues.push({
@@ -37,11 +56,11 @@ export async function doctor(): Promise<void> {
     });
   }
 
-  // Check 2: Config file exists + valid structure
+  // Check 2: Config file exists at workspace root + valid structure
   try {
-    await loadConfig(cwd);
+    await loadConfig(root);
     issues.push({
-      message: "moniq.config file found and loadable.",
+      message: `moniq.config file found at workspace root.`,
       severity: "info",
     });
   } catch (error) {
@@ -58,7 +77,9 @@ export async function doctor(): Promise<void> {
   const hasIssues = issues.some((issue) => issue.severity !== "info");
 
   if (!hasIssues) {
-    console.log(styleText(["bold", "green"], "✔ Everything looks good!"));
+    console.log(
+      styleText(["bold", "green"], "\u{2714} Everything looks good!"),
+    );
     return;
   }
 
@@ -89,12 +110,12 @@ export async function doctor(): Promise<void> {
 
 function formatIssue(issue: DoctorIssue) {
   if (issue.severity === "error") {
-    return `  ${styleText(["bold", "red"], "✘")} ${styleText(["bold", "red"], "ERROR")} ${issue.message}`;
+    return `  ${styleText(["bold", "red"], "\u{2718}")} ${styleText(["bold", "red"], "ERROR")} ${issue.message}`;
   }
   if (issue.severity === "warn") {
-    return `  ${styleText(["bold", "yellow"], "⚠")} ${styleText(["bold", "yellow"], "WARN")} ${issue.message}`;
+    return `  ${styleText(["bold", "yellow"], "\u{26A0}")} ${styleText(["bold", "yellow"], "WARN")} ${issue.message}`;
   }
-  return `  ${styleText("cyan", "ℹ")} ${styleText(["bold", "cyan"], "INFO")} ${issue.message}`;
+  return `  ${styleText("cyan", "\u{2139}")} ${styleText(["bold", "cyan"], "INFO")} ${issue.message}`;
 }
 
 function severityIndex(severity: DoctorIssue["severity"]) {

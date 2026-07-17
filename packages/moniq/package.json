@@ -4,7 +4,11 @@
   "description": "Policy-driven workspace linter for JavaScript/TypeScript monorepos",
   "type": "module",
   "license": "MIT",
-  "author": "Udoh Jeremiah",
+  "author": {
+    "name": "Udoh Jeremiah",
+    "email": "hello@udohjeremiah.com",
+    "url": "https://udohjeremiah.com"
+  },
   "publishConfig": {
     "access": "public",
     "provenance": true
@@ -26,7 +30,8 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/udohjeremiah/moniq.git"
+    "url": "git+https://github.com/udohjeremiah/moniq.git",
+    "directory": "packages/moniq"
   },
   "keywords": [
     "workspace",
@@ -40,22 +45,21 @@
   "bugs": {
     "url": "https://github.com/udohjeremiah/moniq/issues"
   },
-  "homepage": "https://github.com/udohjeremiah/moniq#readme",
+  "homepage": "https://udohjeremiah.github.io/moniq",
   "scripts": {
     "dev": "tsdown --watch",
     "build": "tsdown",
     "lint": "eslint . --max-warnings=0",
     "lint:fix": "eslint --fix .",
     "typecheck": "tsc --noEmit",
-    "test": "vitest run"
+    "test": "vitest run",
+    "prepack": "cp ../../README.md README.md && cp ../../LICENSE LICENSE"
   },
   "devDependencies": {
     "@moniq/cli": "workspace:*",
     "@moniq/config": "workspace:*",
     "@moniq/eslint-config": "workspace:*",
     "@moniq/typescript-config": "workspace:*",
-    "@types/node": "^26.1.1",
-    "eslint": "^10.6.0",
     "shell-quote": "^1.9.0",
     "tsdown": "^0.22.4",
     "vitest": "^4.1.10"
