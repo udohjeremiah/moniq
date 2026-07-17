@@ -37,7 +37,6 @@ jobs:
             ${{ runner.os }}-vitepress-
       - uses: actions/configure-pages@v6
       - run: pnpm install
-      - run: pnpm --filter @moniq/docs run predocs
       - run: pnpm --filter @moniq/docs run build
       - uses: actions/upload-pages-artifact@v5
         with:

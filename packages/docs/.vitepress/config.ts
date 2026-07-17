@@ -1,5 +1,4 @@
 import { defineConfig } from "vitepress";
-import typedocSidebar from "../api/typedoc-sidebar.json";
 import { version } from "../../moniq/package.json";
 import {
   groupIconMdPlugin,
@@ -29,7 +28,6 @@ export default defineConfig({
     logo: "/favicon.svg",
     nav: [
       { text: "Guide", link: "/guide/why-moniq" },
-      { text: "API Reference", link: "/api" },
       {
         text: `v${version}`,
         items: [
@@ -60,10 +58,6 @@ export default defineConfig({
           { text: "Overview", link: "/guide/configuration" },
           { text: "Script Policies", link: "/guide/script-policies" },
         ],
-      },
-      {
-        text: "API Reference",
-        items: typedocSidebar,
       },
     ],
     socialLinks: [
