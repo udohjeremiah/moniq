@@ -1,5 +1,11 @@
 # moniq
 
+## 0.5.1
+
+### Patch Changes
+
+- 973a88e: Refactor pretty formatter to ESLint-inspired output with brand purple colors, fix `init` command workspace root validation, and clean up internal return types and barrel exports
+
 ## 0.5.0
 
 ### Minor Changes
