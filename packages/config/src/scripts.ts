@@ -9,19 +9,27 @@ import { Check, Errors } from "typebox/value";
 export interface ScriptPolicy {
   /**
    * Package globs that may define their own command for this script (no-op unless `command` is set).
-   * Special values: `"."` for root only, `"*"` for all packages. Defaults to `[]`.
+   *
+   * Special values:
+   * - `"."` for root only
+   * - `"*"` for all packages (including root),
+   * - `"**"` for all packages except the root.
+   *
+   * Defaults to `[]`.
    */
   allowCustomCommands?: string[];
 
   /**
    * Whether to autofix mismatched or missing scripts when running `moniq fix`.
-   * Only applies when `command` is a plain string. Defaults to `false`.
+   * Only applies when `command` is a plain string.
+   *
+   * Defaults to `false`.
    */
   autofix?: boolean;
 
   /**
    * The expected command — exact string, RegExp, or predicate like `bin("eslint")`.
-   * When omitted, only existence is validated (subject to `required`).
+   * When omitted, only existence is validated (subject to `presence`).
    */
   command?: ((command: string) => boolean) | RegExp | string;
 
@@ -30,25 +38,36 @@ export interface ScriptPolicy {
 
   /**
    * Package globs to exclude, evaluated after `include`.
+   *
    * Defaults to `[]`.
    */
   exclude?: string[];
 
   /**
    * Package globs this policy applies to.
-   * Special values: `"."` for root only, `"*"` for all packages.
+   *
+   * Special values:
+   * - `"."` for root only
+   * - `"*"` for all packages (including root)
+   * - `"**"` for all packages except the root
+   *
    * Defaults to `["*"]`.
    */
   include?: string[];
 
   /**
-   * Whether the script must exist. If `false`, the script is optional.
-   * Defaults to `true`.
+   * Whether the script must exist, may exist, or must not exist.
+   * - `"required"` — the script must exist.
+   * - `"optional"` — the script may exist.
+   * - `"forbidden"` — the script must not exist.
+   *
+   * Defaults to `"required"`.
    */
-  required?: boolean;
+  presence?: "forbidden" | "optional" | "required";
 
   /**
    * Severity of violations: `"off"` (disabled), `"warn"`, or `"error"`.
+   *
    * Defaults to `"error"`.
    */
   severity?: "error" | "off" | "warn";
@@ -62,6 +81,12 @@ const severityType = Type.Union([
   Type.Literal("warn"),
 ]);
 
+const presenceType = Type.Union([
+  Type.Literal("forbidden"),
+  Type.Literal("optional"),
+  Type.Literal("required"),
+]);
+
 export const ScriptPolicyType = Type.Object({
   allowCustomCommands: Type.Optional(stringArrayType),
   autofix: Type.Optional(Type.Boolean()),
@@ -69,7 +94,7 @@ export const ScriptPolicyType = Type.Object({
   description: Type.Optional(Type.String()),
   exclude: Type.Optional(stringArrayType),
   include: Type.Optional(stringArrayType),
-  required: Type.Optional(Type.Boolean()),
+  presence: Type.Optional(presenceType),
   severity: Type.Optional(severityType),
 });
 

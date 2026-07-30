@@ -9,28 +9,32 @@ or `"lint"`). Its value is either a `ScriptPolicy` or an array of
 
 ## `ScriptPolicy`
 
-| Option                | Type                           | Default   | Description                                                              |
-| --------------------- | ------------------------------ | --------- | ------------------------------------------------------------------------ |
-| `required`            | `boolean`                      | `true`    | Whether the script must exist                                            |
-| `include`             | `string[]`                     | `["*"]`   | Workspace packages this policy applies to                                |
-| `exclude`             | `string[]`                     | `[]`      | Workspace packages excluded from this policy (evaluated after `include`) |
-| `command`             | `string \| RegExp \| function` | —         | Expected command (exact string, `RegExp`, or predicate)                  |
-| `allowCustomCommands` | `string[]`                     | `[]`      | Workspace packages allowed to use a different command                    |
-| `autofix`             | `boolean`                      | `false`   | Apply safe fixes with `moniq fix` (string commands only)                 |
-| `severity`            | `"error" \| "warn" \| "off"`   | `"error"` | Violation severity                                                       |
-| `description`         | `string`                       | —         | Additional context shown in diagnostics                                  |
+| Option                | Type                                      | Default      | Description                                                              |
+| --------------------- | ----------------------------------------- | ------------ | ------------------------------------------------------------------------ |
+| `presence`            | `"required" \| "optional" \| "forbidden"` | `"required"` | Whether the script must exist, may exist, or must not exist              |
+| `include`             | `string[]`                                | `["*"]`      | Workspace packages this policy applies to                                |
+| `exclude`             | `string[]`                                | `[]`         | Workspace packages excluded from this policy (evaluated after `include`) |
+| `command`             | `string \| RegExp \| function`            | —            | Expected command (exact string, `RegExp`, or predicate)                  |
+| `allowCustomCommands` | `string[]`                                | `[]`         | Workspace packages allowed to use a different command                    |
+| `autofix`             | `boolean`                                 | `false`      | Apply safe fixes with `moniq fix` (string commands only)                 |
+| `severity`            | `"error" \| "warn" \| "off"`              | `"error"`    | Violation severity                                                       |
+| `description`         | `string`                                  | —            | Additional context shown in diagnostics                                  |
 
 ## Examples
 
-### `required`
+### `presence`
 
-Require every package to expose a `build` script.
+Control whether a script must exist, may exist, or must not exist.
+
+- `"required"` — the script must exist.
+- `"optional"` — the script may exist.
+- `"forbidden"` — the script must not exist.
 
 ```ts
 export default defineConfig({
   scripts: {
     build: {
-      required: true,
+      presence: "required",
     },
   },
 });
@@ -149,6 +153,9 @@ export default defineConfig({
 
 Autofixes are only available when `command` is an exact string.
 
+> [!tip]
+> Run `moniq fix` to apply available autofixes.
+
 ```ts
 export default defineConfig({
   scripts: {
@@ -160,8 +167,6 @@ export default defineConfig({
 });
 ```
 
-Run `moniq fix` to apply available autofixes.
-
 ### `severity`
 
 Use `"warn"` to report violations without failing the process.
@@ -170,7 +175,7 @@ Use `"warn"` to report violations without failing the process.
 export default defineConfig({
   scripts: {
     test: {
-      required: true,
+      presence: "required",
       severity: "warn",
     },
   },
