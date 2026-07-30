@@ -1,5 +1,11 @@
 # moniq
 
+## 0.6.0
+
+### Minor Changes
+
+- 465bb5d: feat!: replace `required` with `presence`, add `"**"` glob value
+
 ## 0.5.1
 
 ### Patch Changes
