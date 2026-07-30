@@ -51,8 +51,10 @@ jobs:
           node-version: ">=24"
           cache: pnpm
       - uses: pnpm/action-setup@v6
-        with:
-          version: 11 # omit version input to use the version in the `packageManager` field in the `package.json`
+        # Uncomment the `with` block below if your root `package.json` does not
+        # have a `packageManager` field or you want to override the version.
+        # with:
+        #   version: 11
       - run: pnpm install
       - run: pnpm moniq check
 ```

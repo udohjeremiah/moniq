@@ -20,24 +20,6 @@ or `"lint"`). Its value is either a `ScriptPolicy` or an array of
 | `severity`            | `"error" \| "warn" \| "off"`   | `"error"` | Violation severity                                                       |
 | `description`         | `string`                       | —         | Additional context shown in diagnostics                                  |
 
-## Policy Matching
-
-Package paths are relative to the workspace root.
-
-When multiple policies are defined for the same script:
-
-- Policies are evaluated **in order**.
-- The **first matching policy** is used.
-- Think of it like a `switch` statement—place the most specific policies first
-  and the catch-all last.
-
-Special glob values:
-
-| Value | Matches                           |
-| ----- | --------------------------------- |
-| `"."` | Workspace root only               |
-| `"*"` | Every package, including the root |
-
 ## Examples
 
 ### `required`
@@ -103,6 +85,10 @@ export default defineConfig({
 
 Match commands using a regular expression.
 
+> [!tip]
+> Remember to anchor your expression so the binary is matched rather than
+> appearing somewhere later in the command.
+
 ```ts
 export default defineConfig({
   scripts: {
@@ -112,9 +98,6 @@ export default defineConfig({
   },
 });
 ```
-
-Remember to anchor your expression so the binary is matched rather than
-appearing somewhere later in the command.
 
 ### `command` (`bin()`)
 
@@ -205,50 +188,6 @@ export default defineConfig({
       command: "tsup",
       description: "All packages are built with tsup.",
     },
-  },
-});
-```
-
-### Multiple policies
-
-Apply different commands to different package groups.
-
-> [!warning]
-> **Policies are matched top-to-bottom.**
-> A catch-all (`include: ["*"]`) placed first prevents later policies from ever
-> matching. Put the most specific policies first and the catch-all last.
-
-```ts
-export default defineConfig({
-  scripts: {
-    build: [
-      // 1. Legacy packages use rollup (checked first)
-      {
-        include: ["packages/legacy"],
-        command: "rollup",
-      },
-      // 2. Everything else uses tsup
-      {
-        include: ["*"],
-        command: "tsup",
-      },
-    ],
-  },
-});
-```
-
-If a package matches no policy, that script is not validated.
-
-```ts
-export default defineConfig({
-  scripts: {
-    build: [
-      // Only packages under packages/ are validated.
-      { include: ["packages/*"], command: "tsup" },
-
-      // Packages outside packages/ match no policy,
-      // so their build script is not validated.
-    ],
   },
 });
 ```
