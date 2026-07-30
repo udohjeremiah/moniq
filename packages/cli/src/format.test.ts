@@ -32,14 +32,15 @@ function makeReport(diagnostics: Diagnostic[]): Report {
 describe("formatPretty", () => {
   it("returns success message when no diagnostics", () => {
     const result = formatReport(makeReport([]), { format: "pretty" });
-    expect(result).toContain("No issues found");
+    expect(result).toContain("No problems found");
   });
 
   it("formats a single error diagnostic", () => {
     const result = formatReport(makeReport([makeDiagnostic()]), {
       format: "pretty",
     });
-    expect(result).toContain("ERROR");
+    expect(result).toContain("error");
+    expect(result).toContain("scripts/missing");
     expect(result).toContain("Missing required script");
   });
 
@@ -76,7 +77,7 @@ describe("formatPretty", () => {
       makeReport([makeDiagnostic({ severity: "warn" })]),
       { format: "pretty" },
     );
-    expect(result).toContain("WARN");
+    expect(result).toContain("warning");
   });
 
   it("shows summary line at the end", () => {
@@ -87,9 +88,9 @@ describe("formatPretty", () => {
       ]),
       { format: "pretty" },
     );
-    expect(result).toContain("Found 2 issue(s)");
-    expect(result).toContain("error(s)");
-    expect(result).toContain("warning(s)");
+    expect(result).toContain("2 problems");
+    expect(result).toContain("1 error");
+    expect(result).toContain("1 warning");
   });
 });
 
@@ -113,8 +114,8 @@ describe("formatPretty dry-run", () => {
       ]),
       { format: "pretty", isDryRun: true },
     );
-    expect(result).toContain("Dry-run:");
-    expect(result).toContain("2 fix(es)");
+    expect(result).toContain("2 fixes available");
+    expect(result).toContain("2 problems");
   });
 
   it("shows Fix: normally when isDryRun is not set", () => {
@@ -148,7 +149,7 @@ describe("formatJson", () => {
 describe("formatReport", () => {
   it("defaults to pretty format", () => {
     const result = formatReport(makeReport([]));
-    expect(result).toContain("No issues found");
+    expect(result).toContain("No problems found");
   });
 
   it("returns JSON when format is json", () => {

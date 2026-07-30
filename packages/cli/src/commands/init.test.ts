@@ -38,7 +38,7 @@ describe("init", () => {
     const { writeFile } = await import("node:fs/promises");
     await writeFile(
       path.join(directory, "package.json"),
-      JSON.stringify({ name: "test" }),
+      JSON.stringify({ name: "test", workspaces: [] }),
     );
 
     await init({ _cwd: directory, lang: "ts" });
@@ -65,7 +65,11 @@ describe("init", () => {
 
   it("rejects unsupported lang", async () => {
     const directory = await createTemporaryDirectory();
-    const { readFile } = await import("node:fs/promises");
+    const { readFile, writeFile } = await import("node:fs/promises");
+    await writeFile(
+      path.join(directory, "package.json"),
+      JSON.stringify({ name: "test", workspaces: [] }),
+    );
 
     await init({ _cwd: directory, lang: "py" });
 
@@ -142,7 +146,7 @@ describe("init auto-detection", () => {
     const { writeFile } = await import("node:fs/promises");
     await writeFile(
       path.join(directory, "package.json"),
-      JSON.stringify({ name: "test" }),
+      JSON.stringify({ name: "test", workspaces: [] }),
     );
     await writeFile(path.join(directory, "tsconfig.json"), "{}");
 
@@ -166,6 +170,7 @@ describe("init auto-detection", () => {
       JSON.stringify({
         devDependencies: { typescript: "^5.0.0" },
         name: "test",
+        workspaces: [],
       }),
     );
 
@@ -186,7 +191,7 @@ describe("init auto-detection", () => {
     const { writeFile } = await import("node:fs/promises");
     await writeFile(
       path.join(directory, "package.json"),
-      JSON.stringify({ name: "test" }),
+      JSON.stringify({ name: "test", workspaces: [] }),
     );
 
     await init({ _cwd: directory });
@@ -206,7 +211,7 @@ describe("init auto-detection", () => {
     const { writeFile } = await import("node:fs/promises");
     await writeFile(
       path.join(directory, "package.json"),
-      JSON.stringify({ name: "test" }),
+      JSON.stringify({ name: "test", workspaces: [] }),
     );
     await writeFile(path.join(directory, "tsconfig.json"), "{}");
 

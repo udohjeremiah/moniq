@@ -2,7 +2,10 @@ import type { Diagnostic, Report } from "@moniq/core";
 
 import { styleText } from "node:util";
 
-import type { FormatContext, Formatter } from "./types.js";
+import type { FormatContext, Formatter } from "../format.js";
+
+const INFO_INDENT = " ".repeat(14);
+const SEV_PAD = 8;
 
 export const prettyFormatter: Formatter = {
   format(report: Report, context?: FormatContext) {
@@ -10,94 +13,134 @@ export const prettyFormatter: Formatter = {
   },
 };
 
-function formatPretty(diagnostics: Diagnostic[], isDryRun?: boolean) {
-  if (diagnostics.length === 0) {
-    return styleText(["bold", "green"], "✔ No issues found.");
-  }
+function buildSummary(diagnostics: Diagnostic[], isDryRun?: boolean) {
+  const errorCount = diagnostics.filter((d) => d.severity === "error").length;
+  const warningCount = diagnostics.filter((d) => d.severity === "warn").length;
+  const parts: string[] = [];
 
-  const lines: string[] = [];
+  if (errorCount > 0)
+    parts.push(
+      styleText(
+        "red",
+        `${String(errorCount)} error${errorCount === 1 ? "" : "s"}`,
+      ),
+    );
+  if (warningCount > 0)
+    parts.push(
+      styleText(
+        "yellow",
+        `${String(warningCount)} warning${warningCount === 1 ? "" : "s"}`,
+      ),
+    );
 
-  const byPackage = new Map<string, Diagnostic[]>();
-  for (const d of diagnostics) {
-    const array = byPackage.get(d.packageName);
-    if (array) {
-      array.push(d);
-    } else {
-      byPackage.set(d.packageName, [d]);
+  const summary = parts.length > 0 ? parts.join(", ") : "0 problems";
+  const count = diagnostics.length;
+  const plural = count === 1 ? "" : "s";
+  let line = `\u{2718} ${String(count)} problem${plural} (${summary})`;
+
+  if (isDryRun) {
+    const fixableCount = diagnostics.filter(
+      (d) => d.fix && d.severity !== "off",
+    ).length;
+    if (fixableCount > 0) {
+      const fixSuffix = fixableCount === 1 ? "" : "es";
+      line += ` \u{2014} ${String(fixableCount)} fix${fixSuffix} available`;
     }
   }
 
+  return line;
+}
+
+function formatPretty(diagnostics: Diagnostic[], isDryRun?: boolean) {
+  if (diagnostics.length === 0) {
+    return styleText(["bold", "green"], "\u{2714} No problems found");
+  }
+
+  const lines: string[] = [];
+  const byPackage = groupByPackage(diagnostics);
+
   for (const [packageName, diags] of byPackage) {
-    lines.push("", styleText(["bold", "cyan"], packageName));
+    const packagePath = diags[0]?.packagePath ?? "";
+    lines.push(
+      "",
+      styleText(["bold", "magentaBright"], `${packageName} (${packagePath})`),
+    );
 
     for (const d of diags) {
       pushDiagnostic(lines, d, isDryRun);
     }
   }
 
-  const errorCount = diagnostics.filter((d) => d.severity === "error").length;
-  const warningCount = diagnostics.filter((d) => d.severity === "warn").length;
-  const countParts: string[] = [];
-  if (errorCount > 0)
-    countParts.push(styleText("red", `${String(errorCount)} error(s)`));
-  if (warningCount > 0)
-    countParts.push(styleText("yellow", `${String(warningCount)} warning(s)`));
-  const summary = countParts.join(", ");
-
-  const summaryLine = `${styleText("cyan", "\u{2139}")} Found ${String(diagnostics.length)} issue(s) \u{2014} ${summary.length > 0 ? summary : "all clear"}`;
+  const summaryLine = buildSummary(diagnostics, isDryRun);
   lines.push("", styleText("dim", summaryLine));
-
-  if (isDryRun) {
-    const fixableCount = diagnostics.filter(
-      (d) => d.fix && d.severity !== "off",
-    ).length;
-    lines.push(
-      "",
-      styleText(
-        "dim",
-        `${styleText("cyan", "\u{2139}")} Dry-run: ${String(fixableCount)} fix(es) available`,
-      ),
-    );
-  }
 
   return lines.join("\n");
 }
 
-function pushDiagnostic(lines: string[], d: Diagnostic, isDryRun?: boolean) {
-  const badge = severityBadge(d.severity);
-  const icon = severityIcon(d.severity);
+function groupByPackage(diagnostics: Diagnostic[]) {
+  const map = new Map<string, Diagnostic[]>();
+  for (const d of diagnostics) {
+    const array = map.get(d.packageName);
+    if (array) {
+      array.push(d);
+    } else {
+      map.set(d.packageName, [d]);
+    }
+  }
+  return map;
+}
 
-  lines.push(`  ${icon} ${badge} ${d.message}`);
+function padSeverity(label: string) {
+  const stripped = stripAnsi(label);
+  const padLength = SEV_PAD - stripped.length;
+  return padLength > 0 ? label + " ".repeat(padLength) : label;
+}
+
+function pushDiagnostic(lines: string[], d: Diagnostic, isDryRun?: boolean) {
+  const icon = severityIcon(d.severity);
+  const badge = severityBadge(d.severity);
+  const indent = INFO_INDENT;
+
+  lines.push(`  ${icon} ${badge}  ${d.message}  ${styleText("dim", d.ruleId)}`);
+
+  if (d.file) {
+    let loc = "";
+    if (d.line !== undefined) {
+      const col = d.column === undefined ? "" : `:${String(d.column)}`;
+      loc = `:${String(d.line)}${col}`;
+    }
+    lines.push(`${indent}${styleText("dim", d.file + loc)}`);
+  }
 
   if (d.expected && d.actual) {
     lines.push(
-      `         ${styleText("dim", "Expected:")} ${styleText("cyan", d.expected)}`,
-      `         ${styleText("dim", "Actual:")}   ${styleText("red", d.actual)}`,
+      `${indent}${styleText("dim", "Expected:")} ${styleText("magentaBright", d.expected)}`,
+      `${indent}${styleText("dim", "Actual:")}   ${styleText("red", d.actual)}`,
     );
   } else if (d.expected) {
     lines.push(
-      `         ${styleText("dim", "Expected:")} ${styleText("cyan", d.expected)}`,
+      `${indent}${styleText("dim", "Expected:")} ${styleText("magentaBright", d.expected)}`,
     );
   } else if (d.actual) {
     lines.push(
-      `         ${styleText("dim", "Actual:")}   ${styleText("red", d.actual)}`,
+      `${indent}${styleText("dim", "Actual:")}   ${styleText("red", d.actual)}`,
     );
   }
 
   if (d.fix) {
     const label = styleText("dim", isDryRun ? "Would fix:" : "Fix:");
-    lines.push(`         ${label} ${d.fix}`);
+    lines.push(`${indent}${label} ${d.fix}`);
   }
 }
 
 function severityBadge(severity: Diagnostic["severity"]) {
   if (severity === "error") {
-    return styleText(["bold", "red"], "ERROR");
+    return padSeverity(styleText(["bold", "red"], "error"));
   }
   if (severity === "warn") {
-    return styleText(["bold", "yellow"], "WARN");
+    return padSeverity(styleText(["bold", "yellow"], "warning"));
   }
-  return styleText("gray", "OFF");
+  return padSeverity(styleText("gray", "note"));
 }
 
 function severityIcon(severity: Diagnostic["severity"]) {
@@ -108,4 +151,20 @@ function severityIcon(severity: Diagnostic["severity"]) {
     return styleText(["bold", "yellow"], "\u{26A0}");
   }
   return " ";
+}
+
+function stripAnsi(text: string) {
+  const escape = String.fromCodePoint(0x1b);
+  let result = "";
+  let isInEscape = false;
+  for (const char of text) {
+    if (char === escape) {
+      isInEscape = true;
+    } else if (isInEscape && char === "m") {
+      isInEscape = false;
+    } else if (!isInEscape) {
+      result += char;
+    }
+  }
+  return result;
 }

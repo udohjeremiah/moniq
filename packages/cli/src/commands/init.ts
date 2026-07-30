@@ -1,6 +1,7 @@
 import {
   detectPackageManager,
   discoverWorkspace,
+  findWorkspaceRoot,
   type PackageJson,
   type PackageManager,
   readPackageJson,
@@ -19,7 +20,7 @@ const SUPPORTED_LANGS = ["ts", "js", "mjs", "cjs", "mts", "cts"];
 const DIVIDER_WIDTH = 44;
 
 const dim = (s: string) => styleText("dim", s);
-const cyan = (s: string) => styleText("cyan", s);
+const magenta = (s: string) => styleText("magentaBright", s);
 
 function labelPad(label: string) {
   return label.padEnd(18);
@@ -65,22 +66,53 @@ export async function detectLang(
 
   return isModule ? "js" : "mjs";
 }
+
 export function generateConfig() {
   return STARTER_CONFIG;
 }
 
-export async function init(options: InitOptions): Promise<void> {
+export async function init(options: InitOptions) {
   const { _cwd, lang: explicitLang } = options;
 
   const cwd = _cwd ?? process.cwd();
 
   console.log(renderBanner());
 
-  const pmResult = await detectPmAndPackageJson(cwd);
+  // Find workspace root — init must happen at monorepo root
+  let root: string;
+  try {
+    root = await findWorkspaceRoot(cwd);
+  } catch {
+    console.error(
+      `  ${styleText("red", "\u{2718} Init requires a monorepo workspace.")}`,
+    );
+    console.error(
+      `  ${styleText("dim", "Create one for your package manager:")}`,
+    );
+    console.error(
+      `    ${styleText("magentaBright", "npm")}     ${styleText("dim", "https://docs.npmjs.com/cli/using-npm/workspaces")}`,
+    );
+    console.error(
+      `    ${styleText("magentaBright", "pnpm")}    ${styleText("dim", "https://pnpm.io/workspaces")}`,
+    );
+    console.error(
+      `    ${styleText("magentaBright", "yarn")}    ${styleText("dim", "https://yarnpkg.com/features/workspaces")}`,
+    );
+    console.error(
+      `    ${styleText("magentaBright", "bun")}     ${styleText("dim", "https://bun.sh/docs/install/workspaces")}`,
+    );
+    console.error(
+      `    ${styleText("magentaBright", "deno")}    ${styleText("dim", "https://docs.deno.com/runtime/fundamentals/workspaces")}`,
+    );
+    process.exitCode = 1;
+    return;
+  }
+
+  const pmResult = await detectPmAndPackageJson(root);
   if (!pmResult) return;
   const { pm, rootPackageJson } = pmResult;
 
-  const lang = explicitLang ?? (await detectLang(cwd, rootPackageJson, pm));
+  const lang = explicitLang ?? (await detectLang(root, rootPackageJson, pm));
 
   if (!SUPPORTED_LANGS.includes(lang)) {
     const unsupportedMessage = `Unsupported --lang "${lang}". Supported: ${SUPPORTED_LANGS.join(", ")}`;
@@ -90,7 +122,7 @@ export async function init(options: InitOptions): Promise<void> {
   }
 
   const filename = `moniq.config.${lang}`;
-  const configPath = path.join(cwd, filename);
+  const configPath = path.join(root, filename);
 
   // Check for existing config with overwrite prompt
   const canProceed = await handleExistingConfig(configPath, filename);
@@ -100,7 +132,7 @@ export async function init(options: InitOptions): Promise<void> {
   let workspaceLabel = "single package";
   let workspacePackages: { path: string }[] = [];
   try {
-    const packages = await discoverWorkspace(cwd);
+    const packages = await discoverWorkspace(root);
     workspacePackages = packages;
     if (workspacePackages.length > 1) {
       workspaceLabel = `monorepo with ${String(workspacePackages.length)} packages`;
@@ -109,11 +141,11 @@ export async function init(options: InitOptions): Promise<void> {
     workspaceLabel = "unknown (workspace detection failed)";
   }
 
-  printDetectedInfo(cwd, pm, lang, workspaceLabel, workspacePackages);
+  printDetectedInfo(root, pm, lang, workspaceLabel, workspacePackages);
   console.log();
 
   if (!_cwd) {
-    const isInstalled = await handleInstall(pm, cwd, options.version);
+    const isInstalled = await handleInstall(pm, root, options.version);
     if (!isInstalled) return;
   }
 
@@ -146,7 +178,7 @@ async function detectPmAndPackageJson(cwd: string) {
       `  ${styleText("yellow", "⚠ No package.json found in current directory.")}`,
     );
     console.log(
-      `  Create one first, then run ${styleText("cyan", "moniq init")} again.`,
+      `  Create one first, then run ${styleText("magentaBright", "moniq init")} again.`,
     );
     console.log();
     process.exitCode = 1;
@@ -176,7 +208,7 @@ async function handleExistingConfig(configPath: string, filename: string) {
 
 async function handleInstall(pm: string, root: string, version?: string) {
   const stopSpinner = startSpinner(
-    `Installing ${styleText("cyan", "@udohjeremiah/moniq")} as devDependency...`,
+    `Installing ${styleText("magentaBright", "@udohjeremiah/moniq")} as devDependency...`,
   );
   try {
     await installPackage(pm, root, version);
@@ -256,13 +288,13 @@ function printCompletion(filename: string) {
   console.log();
   console.log(`  ${styleText("dim", "Next steps:")}`);
   console.log(
-    `   1. ${styleText("dim", "Edit")} ${styleText("cyan", filename)} ${styleText("dim", "to configure your policies.")}`,
+    `   1. ${styleText("dim", "Edit")} ${styleText("magentaBright", filename)} ${styleText("dim", "to configure your policies.")}`,
   );
   console.log(
-    `   2. ${styleText("dim", "Run")} ${styleText("cyan", "moniq check")} ${styleText("dim", "to validate your workspace.")}`,
+    `   2. ${styleText("dim", "Run")} ${styleText("magentaBright", "moniq check")} ${styleText("dim", "to validate your workspace.")}`,
   );
   console.log(
-    `   3. ${styleText("dim", "Run")} ${styleText("cyan", "moniq fix")} ${styleText("dim", "to apply automatic fixes.")}`,
+    `   3. ${styleText("dim", "Run")} ${styleText("magentaBright", "moniq fix")} ${styleText("dim", "to apply automatic fixes.")}`,
   );
   console.log();
 }
@@ -284,7 +316,7 @@ function printDetectedInfo(
   const labelIndent = " ".repeat(19);
 
   console.log(topDivider);
-  console.log(`    ${dim(labelPad("Workspace:"))} ${cyan(workspaceLabel)}`);
+  console.log(`    ${dim(labelPad("Workspace:"))} ${magenta(workspaceLabel)}`);
   if (workspacePackages.length > 1) {
     for (const package_ of workspacePackages) {
       const relativePath = path.relative(cwd, package_.path);
@@ -292,8 +324,8 @@ function printDetectedInfo(
       console.log(`    ${labelIndent}${bullet}`);
     }
   }
-  console.log(`    ${dim(labelPad("Package Manager:"))} ${cyan(pm)}`);
-  console.log(`    ${dim(labelPad("Language:"))} ${cyan(langDisplay)}`);
+  console.log(`    ${dim(labelPad("Package Manager:"))} ${magenta(pm)}`);
+  console.log(`    ${dim(labelPad("Language:"))} ${magenta(langDisplay)}`);
   console.log(bottomDivider);
 }
 

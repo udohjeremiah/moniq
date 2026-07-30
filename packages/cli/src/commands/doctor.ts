@@ -7,7 +7,7 @@ interface DoctorIssue {
   severity: "error" | "info" | "warn";
 }
 
-export async function doctor(): Promise<void> {
+export async function doctor() {
   const cwd = process.cwd();
   const issues: DoctorIssue[] = [];
 
@@ -101,7 +101,7 @@ export async function doctor(): Promise<void> {
   console.log(summary);
 
   if (errorCount > 0) {
-    const tip = styleText(["bold", "cyan"], "Tip:");
+    const tip = styleText(["bold", "magentaBright"], "Tip:");
     const hint = styleText("dim", "moniq init");
     console.log();
     console.log(`${tip} Run ${hint} to scaffold a starter configuration.`);
@@ -115,7 +115,7 @@ function formatIssue(issue: DoctorIssue) {
   if (issue.severity === "warn") {
     return `  ${styleText(["bold", "yellow"], "\u{26A0}")} ${styleText(["bold", "yellow"], "WARN")} ${issue.message}`;
   }
-  return `  ${styleText("cyan", "\u{2139}")} ${styleText(["bold", "cyan"], "INFO")} ${issue.message}`;
+  return `  ${styleText("magentaBright", "\u{2139}")} ${styleText(["bold", "magentaBright"], "INFO")} ${issue.message}`;
 }
 
 function severityIndex(severity: DoctorIssue["severity"]) {

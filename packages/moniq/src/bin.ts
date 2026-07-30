@@ -10,9 +10,7 @@ const WRAPPER_SINGLE = new Set(["bunx", "node", "npx", "yarn"]);
 
 export function bin(name: string) {
   return (command: string) => {
-    let tokens = parse(command).filter(
-      (t): t is string => typeof t === "string",
-    );
+    let tokens = parse(command).filter((t) => typeof t === "string");
 
     while (tokens[0] === "cross-env" || /^[A-Z_]\w*=/i.test(tokens[0] ?? "")) {
       tokens = tokens.slice(1);

@@ -1,5 +1,5 @@
 import { loadConfig } from "@moniq/config";
-import { type Report, resolve } from "@moniq/core";
+import { resolve } from "@moniq/core";
 import { discoverWorkspace, findWorkspaceRoot } from "@moniq/workspace";
 import { styleText } from "node:util";
 
@@ -12,7 +12,7 @@ export interface CheckOptions {
   isDryRun?: boolean;
 }
 
-export async function check(options: CheckOptions): Promise<Report> {
+export async function check(options: CheckOptions) {
   const cwd = process.cwd();
   const root = await findWorkspaceRoot(cwd);
 
@@ -42,7 +42,7 @@ export async function check(options: CheckOptions): Promise<Report> {
 
   if (options.format !== "json") {
     console.log(
-      `${styleText("cyan", "\u{2139}")} Scanned ${String(packages.length)} package(s)`,
+      `${styleText("magentaBright", "\u{2139}")} Scanned ${String(packages.length)} package(s)`,
     );
   }
 
@@ -55,7 +55,7 @@ export async function check(options: CheckOptions): Promise<Report> {
 
   if (fixSummary) {
     if (fixSummary.isDryRun) {
-      const message = `${styleText("cyan", "\u{2139}")} Dry-run: ${String(fixSummary.fixed)} fix(es) available, ${String(fixSummary.errors)} error(s)`;
+      const message = `${styleText("magentaBright", "\u{2139}")} Dry-run: ${String(fixSummary.fixed)} fix(es) available, ${String(fixSummary.errors)} error(s)`;
       console.log(styleText("dim", message));
     } else {
       const message = `\u{2714} Fixed ${String(fixSummary.fixed)} issue(s) across ${String(fixSummary.packageCount)} package(s)`;
