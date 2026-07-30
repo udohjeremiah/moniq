@@ -10,9 +10,9 @@ moniq init [options]
 
 ### Options
 
-| Option          | Description                                                                                                 |
-| --------------- | ----------------------------------------------------------------------------------------------------------- |
-| `--lang <type>` | Configuration language: `ts`, `js`, `mjs`, `cjs`, `mts`, or `cts`. Defaults to the detected workspace type. |
+| Option          | Description                                                                                              |
+| --------------- | -------------------------------------------------------------------------------------------------------- |
+| `--lang <type>` | Configuration language for the generated `moniq.config.*` file. Defaults to the detected workspace type. |
 
 ### Notes
 

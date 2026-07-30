@@ -132,7 +132,7 @@ describe("loadConfig", () => {
     await writeConfig(directory, "export default {};", ".js");
 
     await expect(loadConfig(directory)).rejects.toThrow(
-      /Multiple moniq\.config files found/,
+      /Multiple moniq\.config\.\* files found/,
     );
     await rm(directory, { recursive: true });
   });

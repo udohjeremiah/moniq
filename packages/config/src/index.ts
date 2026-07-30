@@ -71,7 +71,7 @@ export async function loadConfig(root: string): Promise<UserConfig> {
 
   if (found.length > 1) {
     throw new Error(
-      `Multiple moniq.config files found in ${root}: ${found.join(", ")}. Remove all but one.`,
+      `Multiple moniq.config.* files found in ${root}: ${found.join(", ")}. Remove all but one.`,
     );
   }
 
