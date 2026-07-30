@@ -4,7 +4,7 @@
   <img src="https://raw.githubusercontent.com/udohjeremiah/moniq/main/assets/banner.png" alt="moniq">
 </p>
 
-**Define workspace policies once. Keep every package consistent.**
+**Policy-driven workspace linter for JavaScript/TypeScript monorepos.**
 
 <img alt="NPM Version" src="https://img.shields.io/npm/v/%40udohjeremiah%2Fmoniq?style=for-the-badge&logo=npm&logoColor=white" height="25">
 <img alt="NPM Downloads" src="https://img.shields.io/npm/dm/%40udohjeremiah%2Fmoniq?style=for-the-badge&logo=npm&logoColor=white" height="25">
@@ -34,8 +34,8 @@ deno add -D npm:@udohjeremiah/moniq
 
 ## Quick Start
 
-Create a `moniq.config.{ts,js,mjs,cjs,mts,cts}` at the root of your monorepo and
-configure your policies:
+Create a `moniq.config.*` at the root of your monorepo and configure your
+policies:
 
 ```ts
 import { defineConfig, bin } from "@udohjeremiah/moniq";
@@ -69,17 +69,16 @@ deno run -A npm:@udohjeremiah/moniq check
 
 ## CLI
 
-| Command        | Description                                | Options                       |
-| -------------- | ------------------------------------------ | ----------------------------- |
-| `moniq init`   | Install and scaffold a `moniq.config` file | `--lang <type>`               |
-| `moniq check`  | Run policy checks                          | `--format <fmt>`              |
-| `moniq fix`    | Run policy checks and apply autofixes      | `--dry-run`, `--format <fmt>` |
-| `moniq doctor` | Detect configuration mistakes              | —                             |
+| Command        | Description                                  | Options                       |
+| -------------- | -------------------------------------------- | ----------------------------- |
+| `moniq init`   | Install and scaffold a `moniq.config.*` file | `--lang <type>`               |
+| `moniq check`  | Run policy checks                            | `--format <fmt>`              |
+| `moniq fix`    | Run policy checks and apply autofixes        | `--dry-run`, `--format <fmt>` |
+| `moniq doctor` | Detect configuration mistakes                | —                             |
 
 ## Configuration
 
-Configuration is done via a `moniq.config.{ts,js,mjs,cjs,mts,cts}` file at your
-workspace root.
+Configuration is done via a `moniq.config.*` file at your workspace root.
 
 ```ts
 import { defineConfig, bin } from "@udohjeremiah/moniq";
@@ -102,8 +101,9 @@ Full documentation is available at [udohjeremiah.github.io/moniq](https://udohje
 
 ## Contributing
 
-See [CONTRIBUTING.md](https://github.com/udohjeremiah/moniq/blob/main/CONTRIBUTING.md) for detailed instructions on setting up
-the project, development workflow, pull request process, and release process.
+See [CONTRIBUTING.md](https://github.com/udohjeremiah/moniq/blob/main/CONTRIBUTING.md)
+for detailed instructions on setting up the project, development workflow, pull
+request process, and release process.
 
 ## License
 

@@ -55,7 +55,7 @@ cli.command("doctor", "Detect configuration mistakes").action(async () => {
 });
 
 cli
-  .command("init", "Scaffold a moniq.config file in the current directory")
+  .command("init", "Scaffold a moniq.config.* file in the current directory")
   .option(
     "--lang <type>",
     "Config language: ts, js, mjs, cjs, mts, cts (default: auto-detected)",

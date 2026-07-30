@@ -60,12 +60,12 @@ export async function doctor(): Promise<void> {
   try {
     await loadConfig(root);
     issues.push({
-      message: `moniq.config file found at workspace root.`,
+      message: `moniq.config.* file found at workspace root.`,
       severity: "info",
     });
   } catch (error) {
     issues.push({
-      message: `Failed to load moniq.config: ${String(error)}`,
+      message: `Failed to load moniq.config.*: ${String(error)}`,
       severity: "error",
     });
   }

@@ -16,11 +16,9 @@ Supported extensions:
 ## Basic Structure
 
 ```ts
-import { defineConfig } from "@udohjeremiah/moniq";
-
-export default defineConfig({
+export default {
   // Policy domains
-});
+};
 ```
 
 ## `defineConfig()`

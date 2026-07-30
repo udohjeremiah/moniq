@@ -36,12 +36,6 @@ interface SarifLocation {
   };
 }
 
-interface SarifLog {
-  $schema: string;
-  runs: SarifRun[];
-  version: "2.1.0";
-}
-
 interface SarifReplacement {
   deletedRegion: {
     endColumn: number;
@@ -69,18 +63,6 @@ interface SarifRule {
   name?: string;
   properties?: Record<string, unknown>;
   shortDescription?: { text: string };
-}
-
-interface SarifRun {
-  artifacts?: SarifArtifact[];
-  results: SarifResult[];
-  tool: {
-    driver: {
-      informationUri?: string;
-      name: string;
-      rules?: SarifRule[];
-    };
-  };
 }
 
 export const sarifFormatter: Formatter = {
@@ -167,7 +149,7 @@ function buildResults(
   return diagnostics.map((d) => buildResult(d, rules, artifacts));
 }
 
-function buildSarifLog(report: Report): SarifLog {
+function buildSarifLog(report: Report) {
   const rules = deduplicateRules(report.results);
   const artifacts = collectArtifacts(report.results);
   const results = buildResults(report.results, rules, artifacts);
@@ -192,7 +174,7 @@ function buildSarifLog(report: Report): SarifLog {
   };
 }
 
-function collectArtifacts(diagnostics: Diagnostic[]): SarifArtifact[] {
+function collectArtifacts(diagnostics: Diagnostic[]) {
   const seen = new Map<string, SarifArtifact>();
 
   for (const d of diagnostics) {

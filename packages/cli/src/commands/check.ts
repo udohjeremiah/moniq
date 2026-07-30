@@ -20,7 +20,7 @@ export async function check(options: CheckOptions): Promise<Report> {
   try {
     config = await loadConfig(root);
   } catch (error) {
-    throw new Error(`Failed to load moniq.config: ${String(error)}`, {
+    throw new Error(`Failed to load moniq.config.*: ${String(error)}`, {
       cause: error,
     });
   }

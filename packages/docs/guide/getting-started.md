@@ -62,7 +62,7 @@ deno add -D npm:@udohjeremiah/moniq
 
 :::
 
-Create a `moniq.config.{ts,js,mjs,cjs,mts,cts}` file in the workspace root.
+Create a `moniq.config.*` file in the workspace root.
 
 ```ts
 import { defineConfig } from "@udohjeremiah/moniq";

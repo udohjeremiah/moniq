@@ -1,6 +1,6 @@
 import { type Report } from "@moniq/core";
 
-import type { Format, Formatter } from "./formatters/types.js";
+import type { Format } from "./formatters/types.js";
 
 import {
   jsonFormatter,
@@ -19,7 +19,7 @@ export function formatReport(report: Report, options?: FormatOptions): string {
   return formatter.format(report, { isDryRun: options?.isDryRun });
 }
 
-function getFormatter(format: Format): Formatter {
+function getFormatter(format: Format) {
   if (format === "json") return jsonFormatter;
   if (format === "sarif") return sarifFormatter;
   return prettyFormatter;
