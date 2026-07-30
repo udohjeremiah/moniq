@@ -1,4 +1,4 @@
-import type { Formatter } from "./types.js";
+import type { Formatter } from "../format.js";
 
 export const jsonFormatter: Formatter = {
   format(report) {

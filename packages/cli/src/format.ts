@@ -1,19 +1,25 @@
 import { type Report } from "@moniq/core";
 
-import type { Format } from "./formatters/types.js";
+import { jsonFormatter } from "./formatters/json.js";
+import { prettyFormatter } from "./formatters/pretty.js";
+import { sarifFormatter } from "./formatters/sarif.js";
 
-import {
-  jsonFormatter,
-  prettyFormatter,
-  sarifFormatter,
-} from "./formatters/index.js";
+export type Format = "json" | "pretty" | "sarif";
+
+export interface FormatContext {
+  isDryRun?: boolean;
+}
 
 export interface FormatOptions {
   format?: Format;
   isDryRun?: boolean;
 }
 
-export function formatReport(report: Report, options?: FormatOptions): string {
+export interface Formatter {
+  format(report: Report, context?: FormatContext): string;
+}
+
+export function formatReport(report: Report, options?: FormatOptions) {
   const fmt = options?.format ?? "pretty";
   const formatter = getFormatter(fmt);
   return formatter.format(report, { isDryRun: options?.isDryRun });
@@ -24,5 +30,3 @@ function getFormatter(format: Format) {
   if (format === "sarif") return sarifFormatter;
   return prettyFormatter;
 }
-
-export { type Format } from "./formatters/types.js";

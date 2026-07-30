@@ -1,6 +1,6 @@
 import type { Diagnostic, Report } from "@moniq/core";
 
-import type { Formatter } from "./types.js";
+import type { Formatter } from "../format.js";
 
 interface SarifArtifact {
   length: number;

@@ -22,9 +22,7 @@ export interface Package {
 
 export type PackageManager = "bun" | "deno" | "npm" | "pnpm" | "yarn";
 
-export async function detectPackageManager(
-  root: string,
-): Promise<PackageManager> {
+export async function detectPackageManager(root: string) {
   // 1. Check lock files first (project-level signal)
   const lockFileMap: Record<string, PackageManager> = {
     "bun.lock": "bun",
@@ -82,7 +80,7 @@ export async function detectPackageManager(
   );
 }
 
-export async function discoverWorkspace(root: string): Promise<Package[]> {
+export async function discoverWorkspace(root: string) {
   const pm = await detectPackageManager(root);
 
   let output: string;
@@ -132,7 +130,7 @@ export async function discoverWorkspace(root: string): Promise<Package[]> {
   }
 }
 
-export async function findWorkspaceRoot(cwd: string): Promise<string> {
+export async function findWorkspaceRoot(cwd: string) {
   let directory = path.resolve(cwd);
   let isRootReached = false;
 

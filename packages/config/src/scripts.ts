@@ -98,9 +98,7 @@ export function parseScriptPolicyOrArray(data: unknown) {
     : parseScriptPolicy(data);
 }
 
-function isCommand(
-  value: unknown,
-): value is ((command: string) => boolean) | RegExp | string {
+function isCommand(value: unknown) {
   return (
     value === undefined ||
     typeof value === "function" ||

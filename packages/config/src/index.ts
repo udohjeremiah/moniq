@@ -60,7 +60,7 @@ export function defineConfig(config: UserConfig): UserConfig {
   return config;
 }
 
-export async function loadConfig(root: string): Promise<UserConfig> {
+export async function loadConfig(root: string) {
   const found: string[] = [];
 
   for (const name of CONFIG_FILENAMES) {

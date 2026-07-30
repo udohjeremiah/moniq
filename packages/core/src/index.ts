@@ -40,7 +40,7 @@ export async function resolve(
   config: UserConfig,
   root: string,
   packages_: Package[],
-): Promise<Report> {
+) {
   const diagnostics: Diagnostic[] = [];
 
   const scriptDiags = await resolveScriptPolicies(
