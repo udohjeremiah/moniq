@@ -41,7 +41,7 @@ describe("resolve", () => {
 
     const config: UserConfig = {
       scripts: {
-        build: { required: true },
+        build: { presence: "required" },
       },
     };
 
@@ -65,7 +65,7 @@ describe("resolve", () => {
 
     const config: UserConfig = {
       scripts: {
-        build: { required: true },
+        build: { presence: "required" },
       },
     };
 
@@ -177,7 +177,7 @@ describe("resolve", () => {
 
     const config: UserConfig = {
       scripts: {
-        build: { include: ["packages/a"], required: true },
+        build: { include: ["packages/a"], presence: "required" },
       },
     };
 
@@ -199,7 +199,7 @@ describe("resolve", () => {
 
     const config: UserConfig = {
       scripts: {
-        build: { exclude: ["packages/b"], required: true },
+        build: { exclude: ["packages/b"], presence: "required" },
       },
     };
 
@@ -222,7 +222,7 @@ describe("resolve", () => {
 
     const config: UserConfig = {
       scripts: {
-        build: { required: true },
+        build: { presence: "required" },
       },
     };
 
@@ -235,6 +235,29 @@ describe("resolve", () => {
     await rm(root, { recursive: true });
   });
 
+  it("supports '**' include (packages only, excluding root)", async () => {
+    const root = await createTemporaryDirectory();
+    await createFixture(root, {
+      ".": { name: "root", scripts: {} },
+      "packages/a": { name: "a", scripts: {} },
+    });
+
+    const config: UserConfig = {
+      scripts: {
+        build: { include: ["**"], presence: "required" },
+      },
+    };
+
+    const report = await resolve(
+      config,
+      root,
+      rootPack(root, ".", "packages/a"),
+    );
+    expect(report.results).toHaveLength(1);
+    expect(report.results[0]?.packageName).toBe("a");
+    await rm(root, { recursive: true });
+  });
+
   it("supports '.' include (root only)", async () => {
     const root = await createTemporaryDirectory();
     await createFixture(root, {
@@ -244,7 +267,7 @@ describe("resolve", () => {
 
     const config: UserConfig = {
       scripts: {
-        build: { include: ["."], required: true },
+        build: { include: ["."], presence: "required" },
       },
     };
 
@@ -326,7 +349,7 @@ describe("resolve", () => {
 
     const config: UserConfig = {
       scripts: {
-        build: { autofix: true, command: "tsup", required: true },
+        build: { autofix: true, command: "tsup", presence: "required" },
       },
     };
 
@@ -343,7 +366,7 @@ describe("resolve", () => {
 
     const config: UserConfig = {
       scripts: {
-        build: { autofix: true, command: /^tsup/, required: true },
+        build: { autofix: true, command: /^tsup/, presence: "required" },
       },
     };
 
@@ -360,7 +383,7 @@ describe("resolve", () => {
 
     const config: UserConfig = {
       scripts: {
-        build: { required: true, severity: "off" },
+        build: { presence: "required", severity: "off" },
       },
     };
 

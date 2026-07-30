@@ -6,8 +6,8 @@ const isValid = () => true;
 
 describe("parseScriptPolicy", () => {
   it("accepts a minimal policy", () => {
-    const result = parseScriptPolicy({ required: true });
-    expect(result).toEqual({ required: true });
+    const result = parseScriptPolicy({ presence: "required" });
+    expect(result).toEqual({ presence: "required" });
   });
 
   it("accepts a full policy", () => {
@@ -18,7 +18,7 @@ describe("parseScriptPolicy", () => {
       description: "Must use ESLint.",
       exclude: ["apps/legacy"],
       include: ["*"],
-      required: true,
+      presence: "required",
       severity: "warn",
     });
     expect(result).toEqual({
@@ -28,7 +28,7 @@ describe("parseScriptPolicy", () => {
       description: "Must use ESLint.",
       exclude: ["apps/legacy"],
       include: ["*"],
-      required: true,
+      presence: "required",
       severity: "warn",
     });
   });
@@ -37,8 +37,8 @@ describe("parseScriptPolicy", () => {
     expect(() => parseScriptPolicy({ severity: "critical" })).toThrow();
   });
 
-  it("rejects wrong type for a boolean field", () => {
-    expect(() => parseScriptPolicy({ required: "yes" })).toThrow();
+  it("rejects wrong type for presence", () => {
+    expect(() => parseScriptPolicy({ presence: "yes" })).toThrow();
   });
 
   it("accepts RegExp command", () => {

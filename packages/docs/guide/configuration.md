@@ -50,10 +50,11 @@ the catch-all last.
 
 Special glob values:
 
-| Value | Matches                           |
-| ----- | --------------------------------- |
-| `"."` | Workspace root only               |
-| `"*"` | Every package, including the root |
+| Value  | Matches                                     |
+| ------ | ------------------------------------------- |
+| `"."`  | Workspace root only                         |
+| `"*"`  | Every package, including the workspace root |
+| `"**"` | Every package, excluding the workspace root |
 
 For example:
 

@@ -27,7 +27,7 @@ async function writeConfig(
 
 describe("defineConfig", () => {
   it("returns the same config object", () => {
-    const config = { scripts: { build: { required: true } } };
+    const config = { scripts: { build: { presence: "required" as const } } };
     const result = defineConfig(config);
     expect(result).toBe(config);
   });
@@ -41,8 +41,8 @@ describe("loadConfig", () => {
       [
         "export default {",
         "  scripts: {",
-        "    build: { required: true },",
-        '    lint: { command: "eslint .", required: true },',
+        '    build: { presence: "required" },',
+        '    lint: { command: "eslint .", presence: "required" },',
         "  },",
         "};",
       ].join("\n"),
@@ -52,8 +52,8 @@ describe("loadConfig", () => {
 
     expect(config).toEqual({
       scripts: {
-        build: { required: true },
-        lint: { command: "eslint .", required: true },
+        build: { presence: "required" },
+        lint: { command: "eslint .", presence: "required" },
       },
     });
     await rm(directory, { recursive: true });
@@ -68,7 +68,7 @@ describe("loadConfig", () => {
       [
         "export default {",
         "  scripts: {",
-        "    build: { required: true },",
+        '    build: { presence: "required" },',
         "  },",
         "};",
       ].join("\n"),
@@ -164,14 +164,14 @@ describe("loadConfig", () => {
     await rm(directory, { recursive: true });
   });
 
-  it("throws on wrong type for a boolean field", async () => {
+  it("throws on wrong type for presence", async () => {
     const directory = await createTemporaryDirectory();
     await writeConfig(
       directory,
       [
         "export default {",
         "  scripts: {",
-        '    build: { required: "yes" },',
+        '    build: { presence: "yes" },',
         "  },",
         "};",
       ].join("\n"),

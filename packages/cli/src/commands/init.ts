@@ -31,8 +31,8 @@ import { defineConfig } from "@udohjeremiah/moniq";
 
 export default defineConfig({
   scripts: {
-    build: { required: true },
-    lint: { required: true },
+    build: { presence: "required" },
+    lint: { presence: "required" },
   },
 });
 `;

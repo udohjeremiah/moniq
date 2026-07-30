@@ -43,7 +43,7 @@ import { defineConfig, bin } from "@udohjeremiah/moniq";
 export default defineConfig({
   scripts: {
     build: { command: bin("tsdown"), severity: "error" },
-    lint: { required: false, severity: "warn" },
+    lint: { presence: "optional", severity: "warn" },
   },
 });
 ```
@@ -86,7 +86,7 @@ import { defineConfig, bin } from "@udohjeremiah/moniq";
 export default defineConfig({
   scripts: {
     build: { command: bin("tsdown"), severity: "error" },
-    lint: { required: false, command: /^eslint/, severity: "warn" },
+    lint: { presence: "optional", command: /^eslint/, severity: "warn" },
     typecheck: { command: "tsc --noEmit", severity: "error" },
   },
 });

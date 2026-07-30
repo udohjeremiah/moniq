@@ -51,12 +51,16 @@ function isCommandMatch(
 }
 
 function isGlobMatch(pattern: string, relativePath: string) {
+  if (pattern === ".") {
+    return relativePath === "." || relativePath === "";
+  }
+
   if (pattern === "*") {
     return true;
   }
 
-  if (pattern === ".") {
-    return relativePath === "." || relativePath === "";
+  if (pattern === "**") {
+    return relativePath !== "." && relativePath !== "";
   }
 
   return wcmatch(pattern)(relativePath);
@@ -104,10 +108,10 @@ async function resolvePolicy(
   const packageDisplayName =
     (packageJson["name"] as string | undefined) ?? path.basename(package_.path);
   const hasScript = getScript(packageJson, scriptName) !== undefined;
+  const presence = policy.presence ?? "required";
   const severity = policy.severity ?? "error";
 
-  // required
-  if (policy.required !== false && !hasScript) {
+  if (presence === "required" && !hasScript) {
     diagnostics.push({
       domain: "scripts",
       fix:
@@ -119,6 +123,20 @@ async function resolvePolicy(
       packagePath: package_.path,
       ruleId: "scripts/missing",
       ruleName: "Missing required script",
+      scriptName,
+      severity,
+    });
+    return;
+  }
+
+  if (presence === "forbidden" && hasScript) {
+    diagnostics.push({
+      domain: "scripts",
+      message: `Unexpected script "${scriptName}"`,
+      packageName: packageDisplayName,
+      packagePath: package_.path,
+      ruleId: "scripts/unexpected",
+      ruleName: "Unexpected script",
       scriptName,
       severity,
     });
