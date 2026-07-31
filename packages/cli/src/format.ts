@@ -1,4 +1,4 @@
-import { type Report } from "@moniq/core";
+import type { Report } from "@moniq/core";
 
 import { jsonFormatter } from "./formatters/json.js";
 import { prettyFormatter } from "./formatters/pretty.js";

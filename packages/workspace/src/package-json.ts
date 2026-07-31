@@ -1,4 +1,4 @@
-import { type PackageJson } from "./scripts.js";
+import type { PackageJson } from "./scripts.js";
 
 export async function readPackageJson(filePath: string) {
   const { readFile } = await import("node:fs/promises");

@@ -1,4 +1,5 @@
-import { type Report } from "@moniq/core";
+import type { Report } from "@moniq/core";
+
 import { describe, expect, it } from "vitest";
 
 import { jsonFormatter } from "./json.js";

@@ -1,5 +1,5 @@
-import { type UserConfig } from "@moniq/config";
-import { type Package } from "@moniq/workspace";
+import type { UserConfig } from "@moniq/config";
+import type { Package } from "@moniq/workspace";
 
 import { resolveScriptPolicies } from "./scripts.js";
 

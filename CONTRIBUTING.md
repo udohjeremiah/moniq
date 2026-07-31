@@ -51,12 +51,13 @@ pnpm run build
 > **Note**: The project uses [pnpm workspaces](https://pnpm.io/workspaces) with
 > [Turborepo](https://turborepo.dev). All dependencies are installed from the
 > root — use the `-w` flag to add a root dependency (`pnpm add -D -w <pkg>`) and
-> `--filter` to add a dependency to a specific package (`pnpm add --filter @moniq/core <pkg>`).
-> You should never need to run `pnpm install` inside individual packages.
+> `--filter` to add a dependency to a specific package
+> (`pnpm add --filter @moniq/core <pkg>`). You should never need to run
+> `pnpm install` inside individual packages.
 
 ## Project Structure
 
-```
+```text
 moniq/
 ├── packages/
 │   ├── cli/               # Command-line interface
@@ -129,9 +130,6 @@ The docs site is in `packages/docs/` and uses VitePress.
 ```bash
 # Start the dev server
 pnpm --filter @moniq/docs run dev
-
-# Generate API docs from source
-pnpm --filter @moniq/docs run predocs
 
 # Build for production
 pnpm --filter @moniq/docs run build

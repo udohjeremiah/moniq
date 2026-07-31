@@ -1,9 +1,11 @@
-import { type ScriptPolicy } from "@moniq/config";
+import type { ScriptPolicy } from "@moniq/config";
+
 import { getScript, type Package, readPackageJson } from "@moniq/workspace";
 import path from "node:path";
-import wcmatch from "wildcard-match";
 
-import { type Diagnostic } from "./index.js";
+import type { Diagnostic } from "./index.js";
+
+import { isMatchAny, pickPolicy } from "./matching.js";
 
 export async function resolveScriptPolicies(
   scriptsConfig: Record<string, ScriptPolicy | ScriptPolicy[]> | undefined,
@@ -48,51 +50,6 @@ function isCommandMatch(
     return expected.test(actual);
   }
   return actual === expected;
-}
-
-function isGlobMatch(pattern: string, relativePath: string) {
-  if (pattern === ".") {
-    return relativePath === "." || relativePath === "";
-  }
-
-  if (pattern === "*") {
-    return true;
-  }
-
-  if (pattern === "**") {
-    return relativePath !== "." && relativePath !== "";
-  }
-
-  return wcmatch(pattern)(relativePath);
-}
-
-function isMatchAny(patterns: string[], relativePath: string) {
-  for (const pattern of patterns) {
-    if (isGlobMatch(pattern, relativePath)) {
-      return true;
-    }
-  }
-  return false;
-}
-
-function isPolicyMatch(policy: ScriptPolicy, relativePath: string) {
-  const include = policy.include ?? ["*"];
-  const exclude = policy.exclude ?? [];
-
-  return (
-    isMatchAny(include, relativePath) && !isMatchAny(exclude, relativePath)
-  );
-}
-
-function pickPolicy(policies: ScriptPolicy[], relativePath: string) {
-  for (const policy of policies) {
-    if (isPolicyMatch(policy, relativePath)) {
-      return policy;
-    }
-  }
-
-  // eslint-disable-next-line unicorn/no-useless-undefined
-  return undefined;
 }
 
 async function resolvePolicy(

@@ -1,4 +1,5 @@
-import { type Diagnostic, type Report } from "@moniq/core";
+import type { Diagnostic, Report } from "@moniq/core";
+
 import { describe, expect, it } from "vitest";
 
 import { formatReport } from "./format.js";

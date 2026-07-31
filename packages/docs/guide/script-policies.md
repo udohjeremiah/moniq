@@ -9,16 +9,14 @@ or `"lint"`). Its value is either a `ScriptPolicy` or an array of
 
 ## `ScriptPolicy`
 
-| Option                | Type                                      | Default      | Description                                                              |
-| --------------------- | ----------------------------------------- | ------------ | ------------------------------------------------------------------------ |
-| `presence`            | `"required" \| "optional" \| "forbidden"` | `"required"` | Whether the script must exist, may exist, or must not exist              |
-| `include`             | `string[]`                                | `["*"]`      | Workspace packages this policy applies to                                |
-| `exclude`             | `string[]`                                | `[]`         | Workspace packages excluded from this policy (evaluated after `include`) |
-| `command`             | `string \| RegExp \| function`            | —            | Expected command (exact string, `RegExp`, or predicate)                  |
-| `allowCustomCommands` | `string[]`                                | `[]`         | Workspace packages allowed to use a different command                    |
-| `autofix`             | `boolean`                                 | `false`      | Apply safe fixes with `moniq fix` (string commands only)                 |
-| `severity`            | `"error" \| "warn" \| "off"`              | `"error"`    | Violation severity                                                       |
-| `description`         | `string`                                  | —            | Additional context shown in diagnostics                                  |
+`ScriptPolicy` extends the shared [`BasePolicy`](/guide/configuration#basepolicy),
+so it inherits its options.
+
+| Option                | Type                           | Default | Description                                              |
+| --------------------- | ------------------------------ | ------- | -------------------------------------------------------- |
+| `command`             | `string \| RegExp \| function` | —       | Expected command (exact string, `RegExp`, or predicate)  |
+| `allowCustomCommands` | `string[]`                     | `[]`    | Workspace packages allowed to use a different command    |
+| `autofix`             | `boolean`                      | `false` | Apply safe fixes with `moniq fix` (string commands only) |
 
 ## Examples
 
