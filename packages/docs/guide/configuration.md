@@ -36,6 +36,20 @@ export default defineConfig({
 });
 ```
 
+## `BasePolicy`
+
+Every built-in policy extends the shared `BasePolicy` interface. The options
+below are therefore available on every policy object. Plugins should also extend
+`BasePolicy` to inherit the same matching and diagnostic behavior.
+
+| Option        | Type                                      | Default      | Description                                                              |
+| ------------- | ----------------------------------------- | ------------ | ------------------------------------------------------------------------ |
+| `presence`    | `"required" \| "optional" \| "forbidden"` | `"required"` | Whether the item must exist, may exist, or must not exist                |
+| `include`     | `string[]`                                | `["*"]`      | Workspace packages this policy applies to                                |
+| `exclude`     | `string[]`                                | `[]`         | Workspace packages excluded from this policy (evaluated after `include`) |
+| `severity`    | `"error" \| "warn" \| "off"`              | `"error"`    | Controls how violations are reported                                     |
+| `description` | `string`                                  | —            | Human-readable explanation displayed alongside diagnostics               |
+
 ## Policy Matching
 
 Package paths are always relative to the workspace root.

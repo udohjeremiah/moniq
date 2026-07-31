@@ -14,6 +14,7 @@ export interface UserConfig {
   scripts?: Record<string, ScriptPolicy | ScriptPolicy[]>;
 }
 
+export type { BasePolicy, Presence, Severity } from "./base.js";
 export type { ScriptPolicy } from "./scripts.js";
 
 const ScriptPolicyOrArrayType = Type.Union([

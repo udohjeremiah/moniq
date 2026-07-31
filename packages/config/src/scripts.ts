@@ -1,101 +1,61 @@
 import { Type } from "typebox";
 import { Check, Errors } from "typebox/value";
 
+import { type BasePolicy, BasePolicyType } from "./base.js";
+
 /**
- * A single script policy configuration.
+ * Policy for validating the `scripts` field in a package's `package.json` file.
  *
- * See the `scripts` field of `UserConfig` for usage.
+ * Used by the `scripts` policy domain in `UserConfig`.
+ *
+ * Inherits the policy options from {@link BasePolicy}.
  */
-export interface ScriptPolicy {
+export interface ScriptPolicy extends BasePolicy {
   /**
-   * Package globs that may define their own command for this script (no-op unless `command` is set).
+   * Workspace package paths or glob patterns that are allowed to use a
+   * different command for this script.
+   *
+   * Only applies when `command` is specified.
    *
    * Special values:
-   * - `"."` for root only
-   * - `"*"` for all packages (including root),
-   * - `"**"` for all packages except the root.
+   * - "."  - workspace root only
+   * - "*"  - every package, including the root
+   * - "**" - every package, excluding the root
    *
-   * Defaults to `[]`.
+   * @default []
    */
   allowCustomCommands?: string[];
 
   /**
-   * Whether to autofix mismatched or missing scripts when running `moniq fix`.
-   * Only applies when `command` is a plain string.
+   * Whether Moniq may automatically fix missing or mismatched scripts when
+   * running `moniq fix`.
    *
-   * Defaults to `false`.
+   * Only applies when `command` is an exact string.
+   *
+   * @default false
    */
   autofix?: boolean;
 
   /**
-   * The expected command — exact string, RegExp, or predicate like `bin("eslint")`.
-   * When omitted, only existence is validated (subject to `presence`).
+   * Expected command for the script.
+   *
+   * Can be:
+   * - an exact string
+   * - a `RegExp`
+   * - a predicate such as `bin("eslint")`
+   *
+   * When omitted, only the script's presence is validated.
    */
   command?: ((command: string) => boolean) | RegExp | string;
-
-  /** Human-readable explanation displayed alongside diagnostics. */
-  description?: string;
-
-  /**
-   * Package globs to exclude, evaluated after `include`.
-   *
-   * Defaults to `[]`.
-   */
-  exclude?: string[];
-
-  /**
-   * Package globs this policy applies to.
-   *
-   * Special values:
-   * - `"."` for root only
-   * - `"*"` for all packages (including root)
-   * - `"**"` for all packages except the root
-   *
-   * Defaults to `["*"]`.
-   */
-  include?: string[];
-
-  /**
-   * Whether the script must exist, may exist, or must not exist.
-   * - `"required"` — the script must exist.
-   * - `"optional"` — the script may exist.
-   * - `"forbidden"` — the script must not exist.
-   *
-   * Defaults to `"required"`.
-   */
-  presence?: "forbidden" | "optional" | "required";
-
-  /**
-   * Severity of violations: `"off"` (disabled), `"warn"`, or `"error"`.
-   *
-   * Defaults to `"error"`.
-   */
-  severity?: "error" | "off" | "warn";
 }
 
 const stringArrayType = Type.Array(Type.String());
 
-const severityType = Type.Union([
-  Type.Literal("error"),
-  Type.Literal("off"),
-  Type.Literal("warn"),
-]);
-
-const presenceType = Type.Union([
-  Type.Literal("forbidden"),
-  Type.Literal("optional"),
-  Type.Literal("required"),
-]);
-
 export const ScriptPolicyType = Type.Object({
+  ...BasePolicyType.properties,
   allowCustomCommands: Type.Optional(stringArrayType),
   autofix: Type.Optional(Type.Boolean()),
   command: Type.Optional(Type.Unknown()),
-  description: Type.Optional(Type.String()),
-  exclude: Type.Optional(stringArrayType),
-  include: Type.Optional(stringArrayType),
-  presence: Type.Optional(presenceType),
-  severity: Type.Optional(severityType),
 });
 
 export function parseScriptPolicy(data: unknown) {

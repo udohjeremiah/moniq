@@ -1,10 +1,11 @@
 import { cac } from "cac";
 
+import type { Format } from "./format.js";
+
 import moniqPackage from "../../moniq/package.json" with { type: "json" };
 import { check } from "./commands/check.js";
 import { doctor } from "./commands/doctor.js";
 import { init } from "./commands/init.js";
-import { type Format } from "./format.js";
 
 const cli = cac("moniq");
 
