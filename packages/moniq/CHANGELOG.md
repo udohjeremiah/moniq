@@ -1,5 +1,11 @@
 # moniq
 
+## 0.6.1
+
+### Patch Changes
+
+- 22b3129: Refactor script policies to extend a shared `BasePolicy` interface. This is a type-only change with no impact on existing configuration.
+
 ## 0.6.0
 
 ### Minor Changes
