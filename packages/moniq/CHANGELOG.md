@@ -1,5 +1,11 @@
 # moniq
 
+## 0.7.0
+
+### Minor Changes
+
+- e6f4b4d: Add file policies to the `files` config domain to require, forbid, and validate files in each package, with `moniq check` validation and `moniq fix` create/delete actions.
+
 ## 0.6.1
 
 ### Patch Changes
