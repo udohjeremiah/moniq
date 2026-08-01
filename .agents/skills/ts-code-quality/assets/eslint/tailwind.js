@@ -1,5 +1,8 @@
+// @ts-check
+
 import tailwindcss from "eslint-plugin-tailwindcss";
 
+/** @type {import("eslint").Linter.Config[]} */
 const config = [
   tailwindcss.configs["flat/recommended"],
   {

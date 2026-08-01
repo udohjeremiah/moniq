@@ -1,8 +1,17 @@
 # Prettier Configuration Reference
 
+## Version policy
+
+Always install the latest published version of Prettier as a caret range —
+e.g. `"prettier": "^3"` (whichever major is latest). Never pin an exact
+version or a minor/patch caret range. The same applies to
+`prettier-plugin-tailwindcss`.
+
 ## Why Prettier
 
-Prettier is an opinionated code formatter that eliminates all stylistic debates. ESLint focuses on code quality rules; Prettier handles formatting. They are complementary, not alternatives.
+Prettier is an opinionated code formatter that eliminates all stylistic debates.
+ESLint focuses on code quality rules; Prettier handles formatting. They are
+complementary, not alternatives.
 
 ## File naming
 
@@ -28,18 +37,21 @@ Merged into the base config when Tailwind is detected:
 - `plugins: ["prettier-plugin-tailwindcss"]` — auto-sorts Tailwind utility classes following the official order.
 - `tailwindFunctions: ["cn", "clsx", "twMerge", "cva"]` — Recognizes common Tailwind utility functions for class extraction.
 
-Additionally, a `tailwindStylesheet` field is added dynamically with the
-path to the project's main CSS entry. The agent detects the actual CSS
-entry file (looking for `globals.css`, `index.css`, `styles.css` in common
-locations) and sets the path relative to the project/package root.
+Additionally, a `tailwindStylesheet` field is added dynamically with the path to
+the project's main CSS entry. The agent detects the actual CSS entry file
+(looking for `globals.css`, `index.css`, `styles.css` in common locations) and
+sets the path relative to the project/package root.
 
 ## Prettier ignore
 
 The skill also generates a `.prettierignore` file with universal entries
-(`.agents`, `dist`, `coverage`) plus per-detection additions based on
-the detected framework and package manager (e.g., `.next` for Next.js,
-lockfile for the detected package manager).
+(`.agents`, `dist`, `coverage`) plus per-detection additions based on the
+detected framework and package manager (e.g., `.next` for Next.js, lockfile for
+the detected package manager).
 
 ## ESLint + Prettier integration
 
-`eslint-config-prettier` is included in the ESLint flat config (always last) to turn off ESLint rules that would conflict with Prettier. This is the standard approach — no `eslint-plugin-prettier` needed, which would run Prettier as an ESLint rule and duplicate work.
+`eslint-config-prettier` is included in the ESLint flat config (always last) to
+turn off ESLint rules that would conflict with Prettier. This is the standard
+approach — no `eslint-plugin-prettier` needed, which would run Prettier as an
+ESLint rule and duplicate work.

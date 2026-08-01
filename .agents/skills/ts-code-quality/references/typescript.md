@@ -2,14 +2,17 @@
 
 ## Version
 
-Always use the latest available version of TypeScript. Do not pin to a
-specific major release — install whatever is current. The skill's configs
-target the latest TypeScript features (`noUncheckedSideEffectImports`,
-improved `isolatedModules` handling, etc.).
+Always install the latest published version of TypeScript as a caret range —
+e.g. `"typescript": "^5"` (whichever major is latest). Never pin an exact
+version or a minor/patch caret range. The skill's configs target the latest
+TypeScript features (`noUncheckedSideEffectImports`, improved
+`isolatedModules` handling, etc.).
 
 ## Philosophy
 
-The tsconfig assets follow a "maximum strictness by default" philosophy. Every safety-check compiler option is enabled. Projects can relax individual settings as needed, but starting strict prevents entire categories of bugs.
+The tsconfig assets follow a "maximum strictness by default" philosophy. Every
+safety-check compiler option is enabled. Projects can relax individual settings
+as needed, but starting strict prevents entire categories of bugs.
 
 ## Config hierarchy
 

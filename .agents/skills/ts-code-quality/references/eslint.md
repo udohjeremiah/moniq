@@ -2,9 +2,14 @@
 
 ## Version policy
 
-Install the latest version of every ESLint package. Do not pin to specific
-versions. The examples in this reference show `^x` as a reminder to always
-get the latest.
+Install every ESLint package at its latest published version as a caret range —
+e.g. `"eslint": "^9"`, `"typescript-eslint": "^8"` (whichever major is
+latest). Never pin an exact version or a minor/patch caret range.
+
+In monorepos, the ESLint plugins are declared as `dependencies` of
+`packages/eslint-config/package.json` (not the root), so they resolve for
+every consumer. The root holds only the CLI tooling (`typescript`, `eslint`,
+`@types/node`, `prettier`, `knip`).
 
 ## Package choices
 
@@ -69,13 +74,49 @@ The skill composes configs by spreading arrays. The order matters:
 
 ### Type-checked configs
 
-The base config uses `strictTypeChecked` and `stylisticTypeChecked`. `strictTypeChecked` is a superset of `recommendedTypeChecked` that adds stricter rules for projects with strong TypeScript expertise. Combined with `projectService: true`, the parser delegates to TypeScript's project service for type information without needing manual `tsconfig.json` paths.
+The base config uses `strictTypeChecked` and `stylisticTypeChecked`.
+`strictTypeChecked` is a superset of `recommendedTypeChecked` that adds stricter
+rules for projects with strong TypeScript expertise. Combined with
+`projectService: true`, the parser delegates to TypeScript's project service for
+type information without needing manual `tsconfig.json` paths.
 
 ## Rule rationale
 
 ### Typed linting (`projectService: true`)
 
-The base config uses `tseslint.configs.strictTypeChecked` and `tseslint.configs.stylisticTypeChecked` with `languageOptions.parserOptions.projectService: true`. This enables TypeScript's type checker during linting, unlocking rules that can catch real bugs type-checking alone might miss (e.g., `@typescript-eslint/no-floating-promises`, `@typescript-eslint/no-misused-promises`). See [typescript-eslint typed linting docs](https://typescript-eslint.io/getting-started/typed-linting).
+The base config uses `tseslint.configs.strictTypeChecked` and
+`tseslint.configs.stylisticTypeChecked` with
+`languageOptions.parserOptions.projectService: true`. This enables TypeScript's
+type checker during linting, unlocking rules that can catch real bugs
+type-checking alone might miss (e.g., `@typescript-eslint/no-floating-promises`,
+`@typescript-eslint/no-misused-promises`). See
+[typescript-eslint typed linting docs](https://typescript-eslint.io/getting-started/typed-linting).
+
+### `allowDefaultProject`
+
+Config `.js` files (e.g. `eslint.config.js`, shared files in
+`packages/eslint-config/`) fall outside the tsconfig `include` of the projects
+they configure, so type-aware rules would otherwise be skipped on them.
+`projectService.allowDefaultProject` opts those files into a default project so
+they keep full type information. It lives in the **base layer only** — every
+other layer inherits it — and is populated per-project (see SKILL.md step 5):
+`["eslint.config.js"]` for single-package, or the shared config filenames plus
+`eslint.config.js` for monorepos.
+
+Constraints: entries are globs resolved relative to `tsconfigRootDir`, `**` is
+not allowed, and matched files must not also be in their nearest tsconfig. The
+typescript-eslint performance cap is 8 matched files
+(`maximumDefaultProjectFileMatchCount_THIS_WILL_SLOW_DOWN_LINTING`), so keep
+the list minimal.
+
+### Config file typing
+
+Every generated `eslint.config.js` and shared config file starts with
+`// @ts-check` and annotates its export as
+`/** @type {import("eslint").Linter.Config[]} */`. This gives editor
+IntelliSense and TypeScript type-checking on the config shape. ESLint 9 bundles
+its own type definitions, so `Linter.Config` (the flat config type) resolves
+without `@types/eslint`; `Linter.FlatConfig` is a deprecated v8-era alias.
 
 ## Express-specific tuning
 

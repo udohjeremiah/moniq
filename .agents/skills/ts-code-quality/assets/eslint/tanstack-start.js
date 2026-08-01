@@ -1,5 +1,8 @@
+// @ts-check
+
 import { globalIgnores } from "eslint/config";
 
+/** @type {import("eslint").Linter.Config[]} */
 const config = [
   {
     files: ["**/vite.config.*"],
