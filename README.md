@@ -41,6 +41,10 @@ policies:
 import { defineConfig, bin } from "@udohjeremiah/moniq";
 
 export default defineConfig({
+  files: {
+    ".env": { kind: "file", presence: "forbidden" },
+    "README.md": { kind: "file", presence: "required" },
+  },
   scripts: {
     build: { command: bin("tsdown"), severity: "error" },
     lint: { presence: "optional", severity: "warn" },

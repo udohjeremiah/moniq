@@ -1,6 +1,13 @@
+import { mkdtemp, rm } from "node:fs/promises";
+import { tmpdir } from "node:os";
+import path from "node:path";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-import { detectPackageManager, discoverWorkspace } from "./workspace.js";
+import {
+  detectPackageManager,
+  discoverWorkspace,
+  hasWorkspaceConfig,
+} from "./workspace.js";
 
 vi.mock("node:child_process", () => ({
   execFileSync: vi.fn(),
@@ -175,5 +182,158 @@ describe("discoverWorkspace", () => {
     const result = await discoverWorkspace("/repo");
 
     expect(result).toEqual([{ path: "/repo/packages/core" }]);
+  });
+});
+
+function createFixture() {
+  return mkdtemp(path.join(tmpdir(), "moniq-workspace-test-"));
+}
+
+async function writeConfig(directory: string, name: string, content: string) {
+  const { writeFile } = await import("node:fs/promises");
+  await writeFile(path.join(directory, name), content);
+}
+
+describe("hasWorkspaceConfig", () => {
+  it("returns true for a package.json workspaces array", async () => {
+    const directory = await createFixture();
+    await writeConfig(
+      directory,
+      "package.json",
+      JSON.stringify({ name: "test", workspaces: ["packages/*"] }),
+    );
+
+    await expect(hasWorkspaceConfig(directory)).resolves.toBe(true);
+
+    await rm(directory, { recursive: true });
+  });
+
+  it("returns true for a package.json workspaces object", async () => {
+    const directory = await createFixture();
+    await writeConfig(
+      directory,
+      "package.json",
+      JSON.stringify({
+        name: "test",
+        workspaces: { packages: ["packages/*"] },
+      }),
+    );
+
+    await expect(hasWorkspaceConfig(directory)).resolves.toBe(true);
+
+    await rm(directory, { recursive: true });
+  });
+
+  it("returns true for an empty workspaces array", async () => {
+    const directory = await createFixture();
+    await writeConfig(
+      directory,
+      "package.json",
+      JSON.stringify({ name: "test", workspaces: [] }),
+    );
+
+    await expect(hasWorkspaceConfig(directory)).resolves.toBe(true);
+
+    await rm(directory, { recursive: true });
+  });
+
+  it("returns false when package.json has no workspaces", async () => {
+    const directory = await createFixture();
+    await writeConfig(
+      directory,
+      "package.json",
+      JSON.stringify({ name: "test" }),
+    );
+
+    await expect(hasWorkspaceConfig(directory)).resolves.toBe(false);
+
+    await rm(directory, { recursive: true });
+  });
+
+  it("returns true when pnpm-workspace.yaml declares packages", async () => {
+    const directory = await createFixture();
+    await writeConfig(directory, "pnpm-workspace.yaml", "packages:");
+
+    await expect(hasWorkspaceConfig(directory)).resolves.toBe(true);
+
+    await rm(directory, { recursive: true });
+  });
+
+  it("returns true when pnpm-workspace.yaml declares a packages list", async () => {
+    const directory = await createFixture();
+    await writeConfig(
+      directory,
+      "pnpm-workspace.yaml",
+      'packages:\n  - "packages/*"',
+    );
+
+    await expect(hasWorkspaceConfig(directory)).resolves.toBe(true);
+
+    await rm(directory, { recursive: true });
+  });
+
+  it("returns true when pnpm-workspace.yaml declares an empty packages list", async () => {
+    const directory = await createFixture();
+    await writeConfig(directory, "pnpm-workspace.yaml", "packages: []");
+
+    await expect(hasWorkspaceConfig(directory)).resolves.toBe(true);
+
+    await rm(directory, { recursive: true });
+  });
+
+  it("returns false when pnpm-workspace.yaml has no packages field", async () => {
+    const directory = await createFixture();
+    await writeConfig(
+      directory,
+      "pnpm-workspace.yaml",
+      "allowBuilds:\n  lefthook: true",
+    );
+
+    await expect(hasWorkspaceConfig(directory)).resolves.toBe(false);
+
+    await rm(directory, { recursive: true });
+  });
+
+  it("returns true when deno.json declares a workspace", async () => {
+    const directory = await createFixture();
+    await writeConfig(
+      directory,
+      "deno.json",
+      JSON.stringify({ workspace: ["packages/*"] }),
+    );
+
+    await expect(hasWorkspaceConfig(directory)).resolves.toBe(true);
+
+    await rm(directory, { recursive: true });
+  });
+
+  it("returns true when deno.json declares workspace members", async () => {
+    const directory = await createFixture();
+    await writeConfig(
+      directory,
+      "deno.json",
+      JSON.stringify({ workspace: { members: ["packages/*"] } }),
+    );
+
+    await expect(hasWorkspaceConfig(directory)).resolves.toBe(true);
+
+    await rm(directory, { recursive: true });
+  });
+
+  it("returns false when deno.json has no workspace", async () => {
+    const directory = await createFixture();
+    await writeConfig(directory, "deno.json", JSON.stringify({}));
+
+    await expect(hasWorkspaceConfig(directory)).resolves.toBe(false);
+
+    await rm(directory, { recursive: true });
+  });
+
+  it("returns false for an empty directory", async () => {
+    const directory = await createFixture();
+
+    await expect(hasWorkspaceConfig(directory)).resolves.toBe(false);
+
+    await rm(directory, { recursive: true });
   });
 });

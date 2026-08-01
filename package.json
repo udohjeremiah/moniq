@@ -10,8 +10,7 @@
     "format:fix": "prettier --write .",
     "typecheck": "turbo run typecheck",
     "test": "turbo run test",
-    "knip": "knip",
-    "prepare": "husky"
+    "knip": "knip"
   },
   "packageManager": "pnpm@11.17.0",
   "engines": {
@@ -26,15 +25,14 @@
     "@changesets/cli": "^2.31.0",
     "@commitlint/cli": "^21.2.1",
     "@commitlint/config-conventional": "^21.2.0",
+    "@types/node": "^24",
     "commitizen": "^4.3.2",
     "cz-conventional-changelog": "^3.3.0",
-    "husky": "^9.1.7",
+    "eslint": "^10",
     "knip": "^6.25.0",
-    "lint-staged": "^17.0.8",
+    "lefthook": "^2.1.10",
     "prettier": "^3.9.4",
     "turbo": "^2.10.4",
-    "@types/node": "^24",
-    "eslint": "^10",
     "typescript": "^6"
   }
 }

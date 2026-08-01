@@ -40,7 +40,9 @@ function buildSummary(diagnostics: Diagnostic[], isDryRun?: boolean) {
 
   if (isDryRun) {
     const fixableCount = diagnostics.filter(
-      (d) => d.fix && d.severity !== "off",
+      (d) =>
+        (d.fix !== undefined || d.fixAction !== undefined) &&
+        d.severity !== "off",
     ).length;
     if (fixableCount > 0) {
       const fixSuffix = fixableCount === 1 ? "" : "es";
@@ -49,6 +51,22 @@ function buildSummary(diagnostics: Diagnostic[], isDryRun?: boolean) {
   }
 
   return line;
+}
+
+function describeFix(d: Diagnostic) {
+  if (d.fixAction === "delete") {
+    return `delete ${d.file ?? ""}`;
+  }
+  if (d.fixAction === "create") {
+    return `create ${d.file ?? ""}`;
+  }
+  if (d.fixAction === "mkdir") {
+    return `create directory ${d.file ?? ""}`;
+  }
+  if (d.fixAction === "write") {
+    return `write ${d.file ?? ""}`;
+  }
+  return d.fix ?? "";
 }
 
 function formatPretty(diagnostics: Diagnostic[], isDryRun?: boolean) {
@@ -127,9 +145,9 @@ function pushDiagnostic(lines: string[], d: Diagnostic, isDryRun?: boolean) {
     );
   }
 
-  if (d.fix) {
+  if (d.fixAction !== undefined || d.fix) {
     const label = styleText("dim", isDryRun ? "Would fix:" : "Fix:");
-    lines.push(`${indent}${label} ${d.fix}`);
+    lines.push(`${indent}${label} ${describeFix(d)}`);
   }
 }
 

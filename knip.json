@@ -3,7 +3,8 @@
   "tags": ["-lintignore"],
   "workspaces": {
     ".": {
-      "ignore": [".agents/**"]
+      "ignore": [".agents/**"],
+      "ignoreDependencies": ["@commitlint/cli", "commitizen"]
     },
     "packages/docs": {
       "ignore": ["**/.vitepress/cache/**"]

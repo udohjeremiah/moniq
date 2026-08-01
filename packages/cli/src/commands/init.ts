@@ -2,6 +2,7 @@ import {
   detectPackageManager,
   discoverWorkspace,
   findWorkspaceRoot,
+  hasWorkspaceConfig,
   type PackageJson,
   type PackageManager,
   readPackageJson,
@@ -30,6 +31,10 @@ const STARTER_CONFIG = `\
 import { defineConfig } from "@udohjeremiah/moniq";
 
 export default defineConfig({
+  files: {
+    ".env": { kind: "file", presence: "forbidden" },
+    "README.md": { kind: "file", presence: "required" },
+  },
   scripts: {
     build: { presence: "required" },
     lint: { presence: "required" },
@@ -83,28 +88,13 @@ export async function init(options: InitOptions) {
   try {
     root = await findWorkspaceRoot(cwd);
   } catch {
-    console.error(
-      `  ${styleText("red", "\u{2718} Init requires a monorepo workspace.")}`,
-    );
-    console.error(
-      `  ${styleText("dim", "Create one for your package manager:")}`,
-    );
-    console.error(
-      `    ${styleText("magentaBright", "npm")}     ${styleText("dim", "https://docs.npmjs.com/cli/using-npm/workspaces")}`,
-    );
-    console.error(
-      `    ${styleText("magentaBright", "pnpm")}    ${styleText("dim", "https://pnpm.io/workspaces")}`,
-    );
-    console.error(
-      `    ${styleText("magentaBright", "yarn")}    ${styleText("dim", "https://yarnpkg.com/features/workspaces")}`,
-    );
-    console.error(
-      `    ${styleText("magentaBright", "bun")}     ${styleText("dim", "https://bun.sh/docs/install/workspaces")}`,
-    );
-    console.error(
-      `    ${styleText("magentaBright", "deno")}    ${styleText("dim", "https://docs.deno.com/runtime/fundamentals/workspaces")}`,
-    );
-    process.exitCode = 1;
+    printMonorepoError("Init requires a workspace.");
+    return;
+  }
+
+  // Require a declared workspace, not just a lock file
+  if (!(await hasWorkspaceConfig(root))) {
+    printMonorepoError("Init requires a workspace.");
     return;
   }
 
@@ -327,6 +317,29 @@ function printDetectedInfo(
   console.log(`    ${dim(labelPad("Package Manager:"))} ${magenta(pm)}`);
   console.log(`    ${dim(labelPad("Language:"))} ${magenta(langDisplay)}`);
   console.log(bottomDivider);
+}
+
+function printMonorepoError(message: string) {
+  console.error(`  ${styleText("red", "\u{2718} " + message)}`);
+  console.error(
+    `  ${styleText("dim", "Create one for your package manager:")}`,
+  );
+  console.error(
+    `    ${styleText("magentaBright", "npm")}     ${styleText("dim", "https://docs.npmjs.com/cli/using-npm/workspaces")}`,
+  );
+  console.error(
+    `    ${styleText("magentaBright", "pnpm")}    ${styleText("dim", "https://pnpm.io/workspaces")}`,
+  );
+  console.error(
+    `    ${styleText("magentaBright", "yarn")}    ${styleText("dim", "https://yarnpkg.com/features/workspaces")}`,
+  );
+  console.error(
+    `    ${styleText("magentaBright", "bun")}     ${styleText("dim", "https://bun.sh/docs/install/workspaces")}`,
+  );
+  console.error(
+    `    ${styleText("magentaBright", "deno")}    ${styleText("dim", "https://docs.deno.com/runtime/fundamentals/workspaces")}`,
+  );
+  process.exitCode = 1;
 }
 
 function startSpinner(text: string) {

@@ -167,6 +167,23 @@ export async function findWorkspaceRoot(cwd: string) {
   );
 }
 
+export async function hasWorkspaceConfig(root: string) {
+  // npm/yarn/bun declare the workspace in package.json
+  try {
+    const package_ = await readPackageJson(path.join(root, "package.json"));
+    if (package_["workspaces"] !== undefined) return true;
+  } catch {
+    // no package.json — Deno or uninitialized
+  }
+
+  // pnpm declares the workspace in pnpm-workspace.yaml
+  if (await pnpmWorkspaceHasPackages(root)) return true;
+
+  // Deno declares the workspace in deno.json/deno.jsonc
+  const denoConfig = await readDenoJson(root);
+  return denoConfig !== undefined && "workspace" in denoConfig;
+}
+
 function getWorkspacePatterns(packageJson: Record<string, unknown>) {
   const raw = packageJson["workspaces"];
   if (Array.isArray(raw)) {
@@ -216,6 +233,19 @@ function parseDenoWorkspacePatterns(config: Record<string, unknown>) {
 
 function pmBin(pm: string) {
   return pm;
+}
+
+async function pnpmWorkspaceHasPackages(root: string) {
+  try {
+    const { readFile } = await import("node:fs/promises");
+    const content = await readFile(
+      path.join(root, "pnpm-workspace.yaml"),
+      "utf8",
+    );
+    return /^packages\s*:/m.test(content);
+  } catch {
+    return false;
+  }
 }
 
 async function readDenoJson(root: string) {
