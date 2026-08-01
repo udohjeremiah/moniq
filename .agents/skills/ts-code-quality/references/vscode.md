@@ -17,7 +17,7 @@
 | ------------------------------------- | ----------------------- | ------------------------------------------------------------------- |
 | `tailwindCSS.experimental.configFile` | Tailwind detected       | Path to CSS entry file (detected from project, e.g., `globals.css`) |
 | `files.watcherExclude`                | TanStack Start detected | `{ "**/routeTree.gen.ts": true }`                                   |
-| `search.exclude` (routeTree entry)    | TanStack Start detected | `"**/routeTree.gen.ts": true` merged per-detection             |
+| `search.exclude` (routeTree entry)    | TanStack Start detected | `"**/routeTree.gen.ts": true` merged per-detection                  |
 | `files.readonlyInclude`               | TanStack Start detected | `{ "**/routeTree.gen.ts": true }`                                   |
 
 ## Extension recommendations (`assets/vscode/extensions.json`)
@@ -34,4 +34,7 @@
 
 ## Note
 
-The `.vscode/` folder is project-local and should be committed to version control so all contributors share the same settings. If a contributor uses a different editor (WebStorm, Neovim, etc.), the `.editorconfig` and ESLint/Prettier CLI commands provide equivalent functionality.
+The `.vscode/` folder is project-local and should be committed to version
+control so all contributors share the same settings. If a contributor uses a
+different editor (WebStorm, Neovim, etc.), the `.editorconfig` and
+ESLint/Prettier CLI commands provide equivalent functionality.

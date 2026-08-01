@@ -1,7 +1,10 @@
+// @ts-check
+
 import eslintReact from "@eslint-react/eslint-plugin";
 import jsxA11y from "eslint-plugin-jsx-a11y";
 import globals from "globals";
 
+/** @type {import("eslint").Linter.Config[]} */
 const config = [
   eslintReact.configs["strict-type-checked"],
   jsxA11y.flatConfigs.strict,

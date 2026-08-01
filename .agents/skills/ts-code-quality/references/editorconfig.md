@@ -2,7 +2,9 @@
 
 ## Purpose
 
-EditorConfig helps maintain consistent coding styles across different editors and IDEs. It's not a linter or formatter — it's a baseline that tells editors how to handle whitespace.
+EditorConfig helps maintain consistent coding styles across different editors
+and IDEs. It's not a linter or formatter — it's a baseline that tells editors
+how to handle whitespace.
 
 ## Config (`assets/editorconfig/.editorconfig`)
 
@@ -34,4 +36,5 @@ trim_trailing_whitespace = false
 
 ## VS Code integration
 
-The VS Code `editorconfig.editorconfig` extension is recommended in `extensions.json` to automatically apply these settings.
+The VS Code `editorconfig.editorconfig` extension is recommended in
+`extensions.json` to automatically apply these settings.

@@ -1,11 +1,14 @@
+// @ts-check
+
 import js from "@eslint/js";
 import prettier from "eslint-config-prettier/flat";
+import { createTypeScriptImportResolver } from "eslint-import-resolver-typescript";
 import * as depend from "eslint-plugin-depend";
-import { importX } from "eslint-plugin-import-x";
-import onlyWarn from "eslint-plugin-only-warn";
+import { createNodeResolver, importX } from "eslint-plugin-import-x";
+import * as onlyWarn from "eslint-plugin-only-warn";
 import * as perfectionist from "eslint-plugin-perfectionist";
 import promise from "eslint-plugin-promise";
-import regexp from "eslint-plugin-regexp";
+import * as regexp from "eslint-plugin-regexp";
 import security from "eslint-plugin-security";
 import * as sonarjs from "eslint-plugin-sonarjs";
 import unicorn from "eslint-plugin-unicorn";
@@ -13,6 +16,7 @@ import unusedImports from "eslint-plugin-unused-imports";
 import { globalIgnores } from "eslint/config";
 import * as tseslint from "typescript-eslint";
 
+/** @type {import("eslint").Linter.Config[]} */
 const config = [
   js.configs.recommended,
   ...tseslint.configs.strictTypeChecked,
@@ -22,6 +26,7 @@ const config = [
   importX.flatConfigs.typescript,
   perfectionist.configs["recommended-natural"],
   security.configs.recommended,
+  // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
   promise.configs["flat/recommended"],
   regexp.configs.recommended,
   sonarjs.configs.recommended,
@@ -29,6 +34,7 @@ const config = [
   {
     languageOptions: {
       parserOptions: {
+        // allowDefaultProject is set per-project — see SKILL.md step 5
         projectService: true,
       },
     },
@@ -57,12 +63,16 @@ const config = [
       ],
     },
     settings: {
-      "import-x/resolver": {
-        node: true,
-        typescript: {
-          project: ["**/tsconfig.json"],
-        },
-      },
+      "import-x/resolver-next": [
+        createTypeScriptImportResolver(),
+        createNodeResolver(),
+      ],
+    },
+  },
+  {
+    files: ["**/*.config.*"],
+    rules: {
+      "import-x/no-default-export": "off",
     },
   },
   prettier,

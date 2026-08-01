@@ -1,7 +1,10 @@
+// @ts-check
+
 import nextVitals from "eslint-config-next/core-web-vitals";
 import nextTs from "eslint-config-next/typescript";
 import { globalIgnores } from "eslint/config";
 
+/** @type {import("eslint").Linter.Config[]} */
 const config = [
   ...nextVitals,
   ...nextTs,
