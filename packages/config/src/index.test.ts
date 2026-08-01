@@ -164,6 +164,65 @@ describe("loadConfig", () => {
     await rm(directory, { recursive: true });
   });
 
+  it("loads a config file with the files domain", async () => {
+    const directory = await createTemporaryDirectory();
+    await writeConfig(
+      directory,
+      [
+        "export default {",
+        "  files: {",
+        '    ".env": { presence: "forbidden" },',
+        '    "README.md": { presence: "required" },',
+        "  },",
+        "};",
+      ].join("\n"),
+    );
+
+    const config = await loadConfig(directory);
+
+    expect(config).toEqual({
+      files: {
+        ".env": { presence: "forbidden" },
+        "README.md": { presence: "required" },
+      },
+    });
+    await rm(directory, { recursive: true });
+  });
+
+  it("throws on invalid files kind", async () => {
+    const directory = await createTemporaryDirectory();
+    await writeConfig(
+      directory,
+      [
+        "export default {",
+        "  files: {",
+        '    "README.md": { kind: "junction" },',
+        "  },",
+        "};",
+      ].join("\n"),
+    );
+
+    await expect(loadConfig(directory)).rejects.toThrow();
+    await rm(directory, { recursive: true });
+  });
+
+  it("throws when files content is combined with kind directory", async () => {
+    const directory = await createTemporaryDirectory();
+    await writeConfig(
+      directory,
+      [
+        "export default {",
+        "  files: {",
+        '    packages: { content: "x", kind: "directory" },',
+        "  },",
+        "};",
+      ].join("\n"),
+    );
+
+    await expect(loadConfig(directory)).rejects.toThrow();
+    await rm(directory, { recursive: true });
+  });
+
   it("throws on wrong type for presence", async () => {
     const directory = await createTemporaryDirectory();
     await writeConfig(

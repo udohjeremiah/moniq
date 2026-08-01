@@ -1,7 +1,7 @@
 import type { UserConfig } from "@moniq/config";
 import type { Package } from "@moniq/workspace";
 
-import { resolveScriptPolicies } from "./scripts.js";
+import { policyDomains } from "./domains.js";
 
 export interface Diagnostic {
   actual?: string;
@@ -10,6 +10,7 @@ export interface Diagnostic {
   expected?: string;
   file?: string;
   fix?: string;
+  fixAction?: "create" | "delete" | "mkdir" | "write";
   line?: number;
   message: string;
   metadata?: Record<string, unknown>;
@@ -43,12 +44,10 @@ export async function resolve(
 ) {
   const diagnostics: Diagnostic[] = [];
 
-  const scriptDiags = await resolveScriptPolicies(
-    config.scripts,
-    root,
-    packages_,
-  );
-  diagnostics.push(...scriptDiags);
+  for (const domain of policyDomains) {
+    const domainDiagnostics = await domain.resolve(config, root, packages_);
+    diagnostics.push(...domainDiagnostics);
+  }
 
   const errors = diagnostics.filter((d) => d.severity === "error").length;
   const warnings = diagnostics.filter((d) => d.severity === "warn").length;

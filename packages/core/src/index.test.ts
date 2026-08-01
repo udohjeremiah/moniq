@@ -7,6 +7,18 @@ import { describe, expect, it } from "vitest";
 
 import { resolve } from "./index.js";
 
+async function createDirectory(root: string, relativePath: string) {
+  const { mkdir } = await import("node:fs/promises");
+  await mkdir(path.join(root, relativePath), { recursive: true });
+}
+
+async function createFile(root: string, relativePath: string, content = "") {
+  const { mkdir, writeFile } = await import("node:fs/promises");
+  const absolutePath = path.join(root, relativePath);
+  await mkdir(path.dirname(absolutePath), { recursive: true });
+  await writeFile(absolutePath, content);
+}
+
 async function createFixture(
   root: string,
   packages: Record<string, Record<string, unknown>>,
@@ -400,6 +412,546 @@ describe("resolve", () => {
     });
 
     const config: UserConfig = {};
+
+    const report = await resolve(config, root, rootPack(root, "."));
+    expect(report.results).toEqual([]);
+    await rm(root, { recursive: true });
+  });
+});
+
+describe("resolve files", () => {
+  it("returns diagnostic for missing required path", async () => {
+    const root = await createTemporaryDirectory();
+    await createFixture(root, {
+      ".": { name: "root" },
+    });
+
+    const config: UserConfig = {
+      files: {
+        "README.md": { presence: "required" },
+      },
+    };
+
+    const report = await resolve(config, root, rootPack(root, "."));
+    expect(report.results).toEqual([
+      {
+        domain: "files",
+        file: "README.md",
+        message: 'Missing required path "README.md"',
+        packageName: "root",
+        packagePath: path.join(root, "."),
+        ruleId: "files/missing",
+        ruleName: "Missing required path",
+        severity: "error",
+      },
+    ]);
+    await rm(root, { recursive: true });
+  });
+
+  it("returns no diagnostic when required file exists", async () => {
+    const root = await createTemporaryDirectory();
+    await createFixture(root, {
+      ".": { name: "root" },
+    });
+    await createFile(root, "README.md", "# Moniq");
+
+    const config: UserConfig = {
+      files: {
+        "README.md": { presence: "required" },
+      },
+    };
+
+    const report = await resolve(config, root, rootPack(root, "."));
+    expect(report.results).toEqual([]);
+    await rm(root, { recursive: true });
+  });
+
+  it("returns diagnostic for forbidden file that exists", async () => {
+    const root = await createTemporaryDirectory();
+    await createFixture(root, {
+      ".": { name: "root" },
+    });
+    await createFile(root, ".env", "SECRET=1");
+
+    const config: UserConfig = {
+      files: {
+        ".env": { presence: "forbidden" },
+      },
+    };
+
+    const report = await resolve(config, root, rootPack(root, "."));
+    expect(report.results).toEqual([
+      {
+        domain: "files",
+        file: ".env",
+        message: 'Unexpected file ".env"',
+        packageName: "root",
+        packagePath: path.join(root, "."),
+        ruleId: "files/unexpected",
+        ruleName: "Unexpected file",
+        severity: "error",
+      },
+    ]);
+    await rm(root, { recursive: true });
+  });
+
+  it("returns diagnostic for missing required directory", async () => {
+    const root = await createTemporaryDirectory();
+    await createFixture(root, {
+      ".": { name: "root" },
+    });
+
+    const config: UserConfig = {
+      files: {
+        packages: { kind: "directory", presence: "required" },
+      },
+    };
+
+    const report = await resolve(config, root, rootPack(root, "."));
+    expect(report.results).toEqual([
+      {
+        domain: "files",
+        file: "packages",
+        message: 'Missing required directory "packages"',
+        packageName: "root",
+        packagePath: path.join(root, "."),
+        ruleId: "files/missing",
+        ruleName: "Missing required directory",
+        severity: "error",
+      },
+    ]);
+    await rm(root, { recursive: true });
+  });
+
+  it("returns diagnostic when kind does not match", async () => {
+    const root = await createTemporaryDirectory();
+    await createFixture(root, {
+      ".": { name: "root" },
+    });
+    await createFile(root, "README.md", "x");
+
+    const config: UserConfig = {
+      files: {
+        "README.md": { kind: "directory" },
+      },
+    };
+
+    const report = await resolve(config, root, rootPack(root, "."));
+    expect(report.results).toEqual([
+      {
+        domain: "files",
+        file: "README.md",
+        message: `Expected a directory but found a file at "README.md"`,
+        packageName: "root",
+        packagePath: path.join(root, "."),
+        ruleId: "files/kind",
+        ruleName: "Unexpected kind",
+        severity: "error",
+      },
+    ]);
+    await rm(root, { recursive: true });
+  });
+
+  it("returns diagnostic for exact content mismatch", async () => {
+    const root = await createTemporaryDirectory();
+    await createFixture(root, {
+      ".": { name: "root" },
+    });
+    await createFile(root, ".npmrc", "auto-install-peers=false");
+
+    const config: UserConfig = {
+      files: {
+        ".npmrc": { content: "auto-install-peers=true" },
+      },
+    };
+
+    const report = await resolve(config, root, rootPack(root, "."));
+    expect(report.results).toEqual([
+      {
+        actual: "auto-install-peers=false",
+        domain: "files",
+        expected: "auto-install-peers=true",
+        file: ".npmrc",
+        message: 'Unexpected contents for ".npmrc"',
+        packageName: "root",
+        packagePath: path.join(root, "."),
+        ruleId: "files/content-mismatch",
+        ruleName: "Unexpected contents",
+        severity: "error",
+      },
+    ]);
+    await rm(root, { recursive: true });
+  });
+
+  it("returns no diagnostic when exact content matches", async () => {
+    const root = await createTemporaryDirectory();
+    await createFixture(root, {
+      ".": { name: "root" },
+    });
+    await createFile(root, ".npmrc", "auto-install-peers=true");
+
+    const config: UserConfig = {
+      files: {
+        ".npmrc": { content: "auto-install-peers=true" },
+      },
+    };
+
+    const report = await resolve(config, root, rootPack(root, "."));
+    expect(report.results).toEqual([]);
+    await rm(root, { recursive: true });
+  });
+
+  it("returns no diagnostic when RegExp content matches", async () => {
+    const root = await createTemporaryDirectory();
+    await createFixture(root, {
+      ".": { name: "root" },
+    });
+    await createFile(root, "README.md", "# Heading");
+
+    const config: UserConfig = {
+      files: {
+        "README.md": { content: /^# / },
+      },
+    };
+
+    const report = await resolve(config, root, rootPack(root, "."));
+    expect(report.results).toEqual([]);
+    await rm(root, { recursive: true });
+  });
+
+  it("returns diagnostic when RegExp content does not match", async () => {
+    const root = await createTemporaryDirectory();
+    await createFixture(root, {
+      ".": { name: "root" },
+    });
+    await createFile(root, "README.md", "body");
+
+    const config: UserConfig = {
+      files: {
+        "README.md": { content: /^# / },
+      },
+    };
+
+    const report = await resolve(config, root, rootPack(root, "."));
+    expect(report.results).toHaveLength(1);
+    expect(report.results[0]?.ruleId).toBe("files/content-mismatch");
+    await rm(root, { recursive: true });
+  });
+
+  it("picks first matching policy from array", async () => {
+    const root = await createTemporaryDirectory();
+    await createFixture(root, {
+      ".": { name: "root" },
+    });
+    await createDirectory(root, "docs");
+    await createFile(root, "docs/README.md", "x");
+
+    const config: UserConfig = {
+      files: {
+        "docs/README.md": [
+          { include: ["docs/*"], presence: "required" },
+          { include: ["*"], presence: "optional" },
+        ],
+      },
+    };
+
+    const report = await resolve(config, root, rootPack(root, "."));
+    expect(report.results).toEqual([]);
+    await rm(root, { recursive: true });
+  });
+
+  it("groups diagnostics under the owning package", async () => {
+    const root = await createTemporaryDirectory();
+    await createFixture(root, {
+      ".": { name: "root" },
+      "packages/a": { name: "a" },
+    });
+    await createFile(root, "packages/a/README.md", "x");
+
+    const config: UserConfig = {
+      files: {
+        "packages/a/README.md": { content: "expected" },
+      },
+    };
+
+    const report = await resolve(
+      config,
+      root,
+      rootPack(root, ".", "packages/a"),
+    );
+    expect(report.results[0]?.packageName).toBe("a");
+    expect(report.results[0]?.packagePath).toBe(path.join(root, "packages/a"));
+    await rm(root, { recursive: true });
+  });
+
+  it("sets create fix for missing required file when autofix is true", async () => {
+    const root = await createTemporaryDirectory();
+    await createFixture(root, {
+      ".": { name: "root" },
+    });
+
+    const config: UserConfig = {
+      files: {
+        "README.md": { autofix: true, kind: "file", presence: "required" },
+      },
+    };
+
+    const report = await resolve(config, root, rootPack(root, "."));
+    expect(report.results[0]?.fixAction).toBe("create");
+    expect(report.results[0]?.fix).toBe("");
+    await rm(root, { recursive: true });
+  });
+
+  it("does not set fix for missing required item when kind is omitted", async () => {
+    const root = await createTemporaryDirectory();
+    await createFixture(root, {
+      ".": { name: "root" },
+    });
+
+    const config: UserConfig = {
+      files: {
+        "README.md": { autofix: true, presence: "required" },
+      },
+    };
+
+    const report = await resolve(config, root, rootPack(root, "."));
+    expect(report.results[0]?.fixAction).toBeUndefined();
+    expect(report.results[0]?.fix).toBeUndefined();
+    await rm(root, { recursive: true });
+  });
+
+  it("sets delete fix for forbidden file when autofix is true", async () => {
+    const root = await createTemporaryDirectory();
+    await createFixture(root, {
+      ".": { name: "root" },
+    });
+    await createFile(root, ".env", "SECRET=1");
+
+    const config: UserConfig = {
+      files: {
+        ".env": { autofix: true, presence: "forbidden" },
+      },
+    };
+
+    const report = await resolve(config, root, rootPack(root, "."));
+    expect(report.results[0]?.fixAction).toBe("delete");
+    expect(report.results[0]?.fix).toBeUndefined();
+    await rm(root, { recursive: true });
+  });
+
+  it("sets write fix for string content mismatch when autofix is true", async () => {
+    const root = await createTemporaryDirectory();
+    await createFixture(root, {
+      ".": { name: "root" },
+    });
+    await createFile(root, ".npmrc", "wrong");
+
+    const config: UserConfig = {
+      files: {
+        ".npmrc": { autofix: true, content: "auto-install-peers=true" },
+      },
+    };
+
+    const report = await resolve(config, root, rootPack(root, "."));
+    expect(report.results[0]?.fixAction).toBe("write");
+    expect(report.results[0]?.fix).toBe("auto-install-peers=true");
+    await rm(root, { recursive: true });
+  });
+
+  it("does not set fix for RegExp content mismatch", async () => {
+    const root = await createTemporaryDirectory();
+    await createFixture(root, {
+      ".": { name: "root" },
+    });
+    await createFile(root, "README.md", "body");
+
+    const config: UserConfig = {
+      files: {
+        "README.md": { autofix: true, content: /^# / },
+      },
+    };
+
+    const report = await resolve(config, root, rootPack(root, "."));
+    expect(report.results[0]?.fixAction).toBeUndefined();
+    expect(report.results[0]?.fix).toBeUndefined();
+    await rm(root, { recursive: true });
+  });
+
+  it("sets mkdir fix for missing directory when autofix is true", async () => {
+    const root = await createTemporaryDirectory();
+    await createFixture(root, {
+      ".": { name: "root" },
+    });
+
+    const config: UserConfig = {
+      files: {
+        packages: { autofix: true, kind: "directory", presence: "required" },
+      },
+    };
+
+    const report = await resolve(config, root, rootPack(root, "."));
+    expect(report.results[0]?.fixAction).toBe("mkdir");
+    expect(report.results[0]?.fix).toBeUndefined();
+    await rm(root, { recursive: true });
+  });
+
+  it("returns diagnostic for missing required symlink", async () => {
+    const root = await createTemporaryDirectory();
+    await createFixture(root, {
+      ".": { name: "root" },
+    });
+
+    const config: UserConfig = {
+      files: {
+        "docs/assets": { kind: "symlink", presence: "required" },
+      },
+    };
+
+    const report = await resolve(config, root, rootPack(root, "."));
+    expect(report.results).toEqual([
+      {
+        domain: "files",
+        file: "docs/assets",
+        message: 'Missing required symlink "docs/assets"',
+        packageName: "root",
+        packagePath: path.join(root, "."),
+        ruleId: "files/missing",
+        ruleName: "Missing required symlink",
+        severity: "error",
+      },
+    ]);
+    await rm(root, { recursive: true });
+  });
+
+  it("returns no diagnostic when required symlink exists", async () => {
+    const root = await createTemporaryDirectory();
+    await createFixture(root, {
+      ".": { name: "root" },
+    });
+    await createDirectory(root, "docs");
+    const { symlink } = await import("node:fs/promises");
+    await symlink("target", path.join(root, "docs/assets"));
+
+    const config: UserConfig = {
+      files: {
+        "docs/assets": { kind: "symlink", presence: "required" },
+      },
+    };
+
+    const report = await resolve(config, root, rootPack(root, "."));
+    expect(report.results).toEqual([]);
+    await rm(root, { recursive: true });
+  });
+
+  it("returns diagnostic when a symlink does not match kind file", async () => {
+    const root = await createTemporaryDirectory();
+    await createFixture(root, {
+      ".": { name: "root" },
+    });
+    const { symlink } = await import("node:fs/promises");
+    await symlink("target", path.join(root, "link"));
+
+    const config: UserConfig = {
+      files: {
+        link: { kind: "file", presence: "required" },
+      },
+    };
+
+    const report = await resolve(config, root, rootPack(root, "."));
+    expect(report.results).toEqual([
+      {
+        domain: "files",
+        file: "link",
+        message: `Expected a file but found a symbolic link at "link"`,
+        packageName: "root",
+        packagePath: path.join(root, "."),
+        ruleId: "files/kind",
+        ruleName: "Unexpected kind",
+        severity: "error",
+      },
+    ]);
+    await rm(root, { recursive: true });
+  });
+
+  it("returns diagnostic for forbidden symlink", async () => {
+    const root = await createTemporaryDirectory();
+    await createFixture(root, {
+      ".": { name: "root" },
+    });
+    const { symlink } = await import("node:fs/promises");
+    await symlink("target", path.join(root, "link"));
+
+    const config: UserConfig = {
+      files: {
+        link: { presence: "forbidden" },
+      },
+    };
+
+    const report = await resolve(config, root, rootPack(root, "."));
+    expect(report.results).toEqual([
+      {
+        domain: "files",
+        file: "link",
+        message: 'Unexpected symbolic link "link"',
+        packageName: "root",
+        packagePath: path.join(root, "."),
+        ruleId: "files/unexpected",
+        ruleName: "Unexpected symbolic link",
+        severity: "error",
+      },
+    ]);
+    await rm(root, { recursive: true });
+  });
+
+  it("does not set fix for missing required symlink", async () => {
+    const root = await createTemporaryDirectory();
+    await createFixture(root, {
+      ".": { name: "root" },
+    });
+
+    const config: UserConfig = {
+      files: {
+        "docs/assets": { autofix: true, kind: "symlink", presence: "required" },
+      },
+    };
+
+    const report = await resolve(config, root, rootPack(root, "."));
+    expect(report.results[0]?.fixAction).toBeUndefined();
+    expect(report.results[0]?.fix).toBeUndefined();
+    await rm(root, { recursive: true });
+  });
+
+  it("sets delete fix for forbidden symlink when autofix is true", async () => {
+    const root = await createTemporaryDirectory();
+    await createFixture(root, {
+      ".": { name: "root" },
+    });
+    const { symlink } = await import("node:fs/promises");
+    await symlink("target", path.join(root, "link"));
+
+    const config: UserConfig = {
+      files: {
+        link: { autofix: true, presence: "forbidden" },
+      },
+    };
+
+    const report = await resolve(config, root, rootPack(root, "."));
+    expect(report.results[0]?.fixAction).toBe("delete");
+    expect(report.results[0]?.fix).toBeUndefined();
+    await rm(root, { recursive: true });
+  });
+
+  it("respects severity: off (skips policy)", async () => {
+    const root = await createTemporaryDirectory();
+    await createFixture(root, {
+      ".": { name: "root" },
+    });
+
+    const config: UserConfig = {
+      files: {
+        "README.md": { presence: "required", severity: "off" },
+      },
+    };
 
     const report = await resolve(config, root, rootPack(root, "."));
     expect(report.results).toEqual([]);

@@ -3,20 +3,19 @@
 The `scripts` policy domain validates the `scripts` field of `package.json`
 files across your workspace.
 
-Each key under `scripts` is the name of a package script (for example, `"build"`
-or `"lint"`). Its value is either a `ScriptPolicy` or an array of
-`ScriptPolicy`s.
+Each key under `scripts` is the name of a package script. Its value is either a
+`ScriptPolicy` or an array of `ScriptPolicy`s.
 
 ## `ScriptPolicy`
 
 `ScriptPolicy` extends the shared [`BasePolicy`](/guide/configuration#basepolicy),
 so it inherits its options.
 
-| Option                | Type                           | Default | Description                                              |
-| --------------------- | ------------------------------ | ------- | -------------------------------------------------------- |
-| `command`             | `string \| RegExp \| function` | —       | Expected command (exact string, `RegExp`, or predicate)  |
-| `allowCustomCommands` | `string[]`                     | `[]`    | Workspace packages allowed to use a different command    |
-| `autofix`             | `boolean`                      | `false` | Apply safe fixes with `moniq fix` (string commands only) |
+| Option                | Type                           | Default | Description                                                                                   |
+| --------------------- | ------------------------------ | ------- | --------------------------------------------------------------------------------------------- |
+| `command`             | `string \| RegExp \| function` | —       | Expected command (exact string, `RegExp`, or predicate)                                       |
+| `allowCustomCommands` | `string[]`                     | `[]`    | Workspace packages allowed to use a different command                                         |
+| `autofix`             | `boolean`                      | `false` | Automatically fix missing or mismatched scripts with `moniq fix` (exact string commands only) |
 
 ## Examples
 
@@ -172,7 +171,7 @@ Use `"warn"` to report violations without failing the process.
 ```ts
 export default defineConfig({
   scripts: {
-    test: {
+    build: {
       presence: "required",
       severity: "warn",
     },

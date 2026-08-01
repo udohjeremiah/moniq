@@ -4,6 +4,7 @@ export {
   detectPackageManager,
   discoverWorkspace,
   findWorkspaceRoot,
+  hasWorkspaceConfig,
   type Package,
   type PackageManager,
 } from "./workspace.js";

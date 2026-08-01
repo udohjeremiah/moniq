@@ -1,1 +1,0 @@
-pnpm knip && pnpm typecheck && pnpm build && pnpm test

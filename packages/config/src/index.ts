@@ -3,6 +3,11 @@ import { Type } from "typebox";
 import { Parse } from "typebox/value";
 
 import {
+  type FilePolicy,
+  FilePolicyType,
+  parseFilePolicyOrArray,
+} from "./files.js";
+import {
   parseScriptPolicyOrArray,
   type ScriptPolicy,
   ScriptPolicyType,
@@ -10,21 +15,40 @@ import {
 
 /** Moniq configuration. */
 export interface UserConfig {
-  /** Policies keyed by script name. Maps script names to one or more policies (first match wins). */
+  /**
+   * Policies keyed by workspace-relative filesystem path.
+   *
+   * Maps paths to one or more policies (first match wins).
+   */
+  files?: Record<string, FilePolicy | FilePolicy[]>;
+
+  /** Policies keyed by script name.
+   *
+   * Maps script names to one or more policies (first match wins).
+   */
   scripts?: Record<string, ScriptPolicy | ScriptPolicy[]>;
 }
 
 export type { BasePolicy, Presence, Severity } from "./base.js";
+export type { FileKind, FilePolicy } from "./files.js";
 export type { ScriptPolicy } from "./scripts.js";
+
+const FilePolicyOrArrayType = Type.Union([
+  FilePolicyType,
+  Type.Array(FilePolicyType),
+]);
 
 const ScriptPolicyOrArrayType = Type.Union([
   ScriptPolicyType,
   Type.Array(ScriptPolicyType),
 ]);
 
+const filesRecordType = Type.Record(Type.String(), FilePolicyOrArrayType);
+
 const scriptsRecordType = Type.Record(Type.String(), ScriptPolicyOrArrayType);
 
 const ConfigType = Type.Object({
+  files: Type.Optional(filesRecordType),
   scripts: Type.Optional(scriptsRecordType),
 });
 
@@ -90,17 +114,8 @@ export async function loadConfig(root: string) {
 
   const parsed = Parse(ConfigType, raw) as Record<string, unknown>;
 
-  const scripts = parsed["scripts"];
-
-  if (
-    scripts !== undefined &&
-    typeof scripts === "object" &&
-    scripts !== null
-  ) {
-    for (const policyOrArray of Object.values(scripts)) {
-      parseScriptPolicyOrArray(policyOrArray);
-    }
-  }
+  validatePolicyRecord(parsed["files"], parseFilePolicyOrArray);
+  validatePolicyRecord(parsed["scripts"], parseScriptPolicyOrArray);
 
   return parsed;
 }
@@ -108,4 +123,17 @@ export async function loadConfig(root: string) {
 async function exists(filePath: string) {
   const { existsSync } = await import("node:fs");
   return existsSync(filePath);
+}
+
+function validatePolicyRecord(
+  record: unknown,
+  parse: (value: unknown) => unknown,
+) {
+  if (record === undefined || typeof record !== "object" || record === null) {
+    return;
+  }
+
+  for (const policyOrArray of Object.values(record)) {
+    parse(policyOrArray);
+  }
 }

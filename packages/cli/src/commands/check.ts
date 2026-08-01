@@ -3,14 +3,21 @@ import { resolve } from "@moniq/core";
 import { discoverWorkspace, findWorkspaceRoot } from "@moniq/workspace";
 import { styleText } from "node:util";
 
+import { applyFileFixes } from "../files.js";
+import { applyFixes, type Fixer, type FixSummary } from "../fix.js";
 import { type Format, formatReport } from "../format.js";
-import { applyScriptFixes, type FixSummary } from "../scripts.js";
+import { applyScriptFixes } from "../scripts.js";
 
 export interface CheckOptions {
   fix?: boolean;
   format?: Format;
   isDryRun?: boolean;
 }
+
+const fixers: Fixer[] = [
+  { apply: applyFileFixes, domain: "files" },
+  { apply: applyScriptFixes, domain: "scripts" },
+];
 
 export async function check(options: CheckOptions) {
   const cwd = process.cwd();
@@ -35,8 +42,9 @@ export async function check(options: CheckOptions) {
   let fixSummary: FixSummary | undefined;
 
   if (options.fix) {
-    fixSummary = await applyScriptFixes(report.results, {
+    fixSummary = await applyFixes(fixers, report.results, {
       isDryRun: options.isDryRun,
+      root,
     });
   }
 
