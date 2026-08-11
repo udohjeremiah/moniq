@@ -8,8 +8,8 @@ Each key under `scripts` is the name of a package script. Its value is either a
 
 ## `ScriptPolicy`
 
-`ScriptPolicy` extends the shared [`BasePolicy`](/guide/configuration#basepolicy),
-so it inherits its options.
+`ScriptPolicy` extends the shared [`Policy`](/guide/configuration#policy), so it
+inherits its options.
 
 | Option                | Type                           | Default | Description                                                                                   |
 | --------------------- | ------------------------------ | ------- | --------------------------------------------------------------------------------------------- |

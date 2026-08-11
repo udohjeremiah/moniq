@@ -50,9 +50,9 @@ importers:
       '@moniq/config':
         specifier: workspace:*
         version: link:../config
-      '@moniq/core':
+      '@moniq/plugins':
         specifier: workspace:*
-        version: link:../core
+        version: link:../plugins
       '@moniq/workspace':
         specifier: workspace:*
         version: link:../workspace
@@ -78,31 +78,6 @@ importers:
       typebox:
         specifier: ^1.3.6
         version: 1.3.6
-    devDependencies:
-      '@moniq/eslint-config':
-        specifier: workspace:*
-        version: link:../eslint-config
-      '@moniq/typescript-config':
-        specifier: workspace:*
-        version: link:../typescript-config
-      tsdown:
-        specifier: ^0.22.4
-        version: 0.22.4(oxc-resolver@11.21.3)(typescript@6.0.3)
-      vitest:
-        specifier: ^4.1.10
-        version: 4.1.10(@types/node@24.13.3)(vite@8.1.3(@types/node@24.13.3)(jiti@2.7.0)(yaml@2.9.0))
-
-  packages/core:
-    dependencies:
-      '@moniq/config':
-        specifier: workspace:*
-        version: link:../config
-      '@moniq/workspace':
-        specifier: workspace:*
-        version: link:../workspace
-      wildcard-match:
-        specifier: ^5.1.4
-        version: 5.1.4
     devDependencies:
       '@moniq/eslint-config':
         specifier: workspace:*
@@ -186,12 +161,46 @@ importers:
       '@moniq/eslint-config':
         specifier: workspace:*
         version: link:../eslint-config
+      '@moniq/plugins':
+        specifier: workspace:*
+        version: link:../plugins
       '@moniq/typescript-config':
         specifier: workspace:*
         version: link:../typescript-config
       shell-quote:
         specifier: ^1.9.0
         version: 1.9.0
+      tsdown:
+        specifier: ^0.22.4
+        version: 0.22.4(oxc-resolver@11.21.3)(typescript@6.0.3)
+      typebox:
+        specifier: ^1.3.6
+        version: 1.3.6
+      vitest:
+        specifier: ^4.1.10
+        version: 4.1.10(@types/node@24.13.3)(vite@8.1.3(@types/node@24.13.3)(jiti@2.7.0)(yaml@2.9.0))
+
+  packages/plugins:
+    dependencies:
+      '@moniq/config':
+        specifier: workspace:*
+        version: link:../config
+      '@moniq/workspace':
+        specifier: workspace:*
+        version: link:../workspace
+      typebox:
+        specifier: ^1.3.6
+        version: 1.3.6
+      wildcard-match:
+        specifier: ^5.1.4
+        version: 5.1.4
+    devDependencies:
+      '@moniq/eslint-config':
+        specifier: workspace:*
+        version: link:../eslint-config
+      '@moniq/typescript-config':
+        specifier: workspace:*
+        version: link:../typescript-config
       tsdown:
         specifier: ^0.22.4
         version: 0.22.4(oxc-resolver@11.21.3)(typescript@6.0.3)

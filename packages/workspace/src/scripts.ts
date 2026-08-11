@@ -1,4 +1,4 @@
-export type PackageJson = Record<string, unknown>;
+import type { PackageJson } from "./package-json.js";
 
 export function getScript(packageJson: PackageJson, name: string) {
   const scripts = packageJson["scripts"];
@@ -6,7 +6,7 @@ export function getScript(packageJson: PackageJson, name: string) {
     return;
   }
   const record = scripts as Record<string, unknown>;
-  const value = Object.entries(record).find(([k]) => k === name)?.[1];
+  const value = new Map(Object.entries(record)).get(name);
   return typeof value === "string" ? value : undefined;
 }
 

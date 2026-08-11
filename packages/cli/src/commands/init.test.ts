@@ -1,3 +1,5 @@
+import type * as childProcess from "node:child_process";
+
 import { mkdtemp, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
@@ -6,7 +8,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { detectLang, generateConfig, init } from "./init.js";
 
 vi.mock("node:child_process", async (importOriginal) => {
-  const actual = await importOriginal<typeof import("node:child_process")>();
+  const actual = await importOriginal<typeof childProcess>();
   return { ...actual, execFileSync: vi.fn() };
 });
 

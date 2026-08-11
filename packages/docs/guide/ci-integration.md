@@ -160,7 +160,7 @@ The output contains tool metadata, a run summary, and the list of diagnostics.
 ```
 
 Diagnostics may also include fields such as `expected`, `actual`, `fix`, `file`,
-`line`, `column`, and other policy-specific properties.
+and other policy-specific properties.
 
 ## SARIF Output
 

@@ -1,28 +1,18 @@
-import type { BasePolicy } from "@moniq/config";
+import type { Policy } from "@moniq/config";
 
 import wcmatch from "wildcard-match";
 
+const matcherCache = new Map<string, (value: string) => boolean>();
+
 export function isMatchAny(patterns: string[], relativePath: string) {
-  for (const pattern of patterns) {
-    if (isGlobMatch(pattern, relativePath)) {
-      return true;
-    }
-  }
-  return false;
+  return patterns.some((pattern) => isGlobMatch(pattern, relativePath));
 }
 
-export function pickPolicy<T extends BasePolicy>(
+export function pickPolicy<T extends Policy>(
   policies: T[],
   relativePath: string,
 ) {
-  for (const policy of policies) {
-    if (isPolicyMatch(policy, relativePath)) {
-      return policy;
-    }
-  }
-
-  // eslint-disable-next-line unicorn/no-useless-undefined
-  return undefined;
+  return policies.find((policy) => isPolicyMatch(policy, relativePath));
 }
 
 function isGlobMatch(pattern: string, relativePath: string) {
@@ -38,10 +28,16 @@ function isGlobMatch(pattern: string, relativePath: string) {
     return relativePath !== "." && relativePath !== "";
   }
 
-  return wcmatch(pattern)(relativePath);
+  let matcher = matcherCache.get(pattern);
+  if (matcher === undefined) {
+    matcher = wcmatch(pattern);
+    matcherCache.set(pattern, matcher);
+  }
+
+  return matcher(relativePath);
 }
 
-function isPolicyMatch(policy: BasePolicy, relativePath: string) {
+function isPolicyMatch(policy: Policy, relativePath: string) {
   const include = policy.include ?? ["*"];
   const exclude = policy.exclude ?? [];
 

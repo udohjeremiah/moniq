@@ -10,49 +10,46 @@ const WRAPPER_SINGLE = new Set(["bunx", "node", "npx", "yarn"]);
 
 export function bin(name: string) {
   return (command: string) => {
-    let tokens = parse(command).filter((t) => typeof t === "string");
+    const tokens = parse(command).filter((t) => typeof t === "string");
+    let start = 0;
 
-    while (tokens[0] === "cross-env" || /^[A-Z_]\w*=/i.test(tokens[0] ?? "")) {
-      tokens = tokens.slice(1);
+    while (
+      tokens.at(start) === "cross-env" ||
+      /^[A-Z_]\w*=/i.test(tokens.at(start) ?? "")
+    ) {
+      start++;
     }
 
-    ({ remaining: tokens } = stripWrappers(tokens));
+    start = stripWrappers(tokens, start);
 
-    let index = 0;
-
-    while (tokens.slice(index, index + 1)[0]?.startsWith("-")) {
-      index++;
+    while (tokens.at(start)?.startsWith("-")) {
+      start++;
     }
 
-    const candidate = tokens.slice(index, index + 1)[0];
+    const candidate = tokens.at(start);
     return candidate !== undefined && toBinaryName(candidate) === name;
   };
 }
 
-function stripWrappers(tokens: string[]) {
-  let remaining = tokens;
+function stripWrappers(tokens: string[], start: number) {
   let isChanged = true;
 
   while (isChanged) {
     isChanged = false;
 
-    const seq = WRAPPER_SEQUENCES.find((w) => {
-      const slice = remaining.slice(0, w.length);
-      return (
-        slice.length === w.length &&
-        slice.every((t, index_) => t === w.slice(index_, index_ + 1)[0])
-      );
-    });
+    const seq = WRAPPER_SEQUENCES.find((w) =>
+      w.every((t, index) => tokens.at(start + index) === t),
+    );
     if (seq) {
-      remaining = remaining.slice(seq.length);
+      start += seq.length;
       isChanged = true;
-    } else if (WRAPPER_SINGLE.has(remaining[0] ?? "")) {
-      remaining = remaining.slice(1);
+    } else if (WRAPPER_SINGLE.has(tokens.at(start) ?? "")) {
+      start += 1;
       isChanged = true;
     }
   }
 
-  return { remaining };
+  return start;
 }
 
 function toBinaryName(token: string) {

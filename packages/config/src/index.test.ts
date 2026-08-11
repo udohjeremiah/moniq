@@ -27,7 +27,7 @@ async function writeConfig(
 
 describe("defineConfig", () => {
   it("returns the same config object", () => {
-    const config = { scripts: { build: { presence: "required" as const } } };
+    const config = { plugins: [] as never[] };
     const result = defineConfig(config);
     expect(result).toBe(config);
   });
@@ -147,23 +147,6 @@ describe("loadConfig", () => {
     await rm(directory, { recursive: true });
   });
 
-  it("throws on invalid severity value", async () => {
-    const directory = await createTemporaryDirectory();
-    await writeConfig(
-      directory,
-      [
-        "export default {",
-        "  scripts: {",
-        '    build: { severity: "critical" },',
-        "  },",
-        "};",
-      ].join("\n"),
-    );
-
-    await expect(loadConfig(directory)).rejects.toThrow();
-    await rm(directory, { recursive: true });
-  });
-
   it("loads a config file with the files domain", async () => {
     const directory = await createTemporaryDirectory();
     await writeConfig(
@@ -189,54 +172,57 @@ describe("loadConfig", () => {
     await rm(directory, { recursive: true });
   });
 
-  it("throws on invalid files kind", async () => {
+  it("loads a config with an arbitrary plugin domain untouched", async () => {
     const directory = await createTemporaryDirectory();
     await writeConfig(
       directory,
       [
         "export default {",
-        "  files: {",
-        '    "README.md": { kind: "junction" },',
-        "  },",
+        '  docker: { image: "node", tag: "24" },',
         "};",
       ].join("\n"),
     );
+
+    const config = await loadConfig(directory);
+
+    expect(config).toEqual({
+      docker: { image: "node", tag: "24" },
+    });
+    await rm(directory, { recursive: true });
+  });
+
+  it("rejects a config export that is not an object", async () => {
+    const directory = await createTemporaryDirectory();
+    await writeConfig(directory, "export default 42;");
 
     await expect(loadConfig(directory)).rejects.toThrow();
     await rm(directory, { recursive: true });
   });
 
-  it("throws when files content is combined with kind directory", async () => {
+  it("rejects a config where plugins is not an array", async () => {
     const directory = await createTemporaryDirectory();
-    await writeConfig(
-      directory,
-      [
-        "export default {",
-        "  files: {",
-        '    packages: { content: "x", kind: "directory" },',
-        "  },",
-        "};",
-      ].join("\n"),
-    );
+    await writeConfig(directory, 'export default { plugins: "npm" };');
 
     await expect(loadConfig(directory)).rejects.toThrow();
     await rm(directory, { recursive: true });
   });
 
-  it("throws on wrong type for presence", async () => {
+  it("accepts a config with a plugins array of plugin objects", async () => {
     const directory = await createTemporaryDirectory();
     await writeConfig(
       directory,
       [
         "export default {",
-        "  scripts: {",
-        '    build: { presence: "yes" },',
-        "  },",
+        '  plugins: [{ name: "package-metadata", policy: {} }],',
         "};",
       ].join("\n"),
     );
 
-    await expect(loadConfig(directory)).rejects.toThrow();
+    const config = await loadConfig(directory);
+
+    expect(config).toEqual({
+      plugins: [{ name: "package-metadata", policy: {} }],
+    });
     await rm(directory, { recursive: true });
   });
 });

@@ -1,4 +1,4 @@
-import type { Report } from "@moniq/core";
+import type { Diagnostic, Report } from "@moniq/plugins";
 
 import { describe, expect, it } from "vitest";
 
@@ -75,6 +75,7 @@ describe("sarifFormatter", () => {
           message: 'Missing required script "build"',
           packageName: "a",
           packagePath: "/packages/a",
+          plugin: "scripts",
           ruleId: "scripts/missing",
           ruleName: "Missing required script",
           scriptName: "build",
@@ -85,12 +86,13 @@ describe("sarifFormatter", () => {
           message: 'Missing required script "test"',
           packageName: "b",
           packagePath: "/packages/b",
+          plugin: "scripts",
           ruleId: "scripts/missing",
           ruleName: "Missing required script",
           scriptName: "test",
           severity: "error",
         },
-      ],
+      ] as Diagnostic[],
       summary: { errors: 2, passed: false, total: 2, warnings: 0 },
       tool: { name: "moniq" },
     };
@@ -123,12 +125,13 @@ describe("sarifFormatter", () => {
           message: 'Unexpected command for script "test"',
           packageName: "b",
           packagePath: "/packages/b",
+          plugin: "scripts",
           ruleId: "scripts/command-mismatch",
           ruleName: "Unexpected command",
           scriptName: "test",
           severity: "warn",
         },
-      ],
+      ] as Diagnostic[],
       summary: { errors: 1, passed: false, total: 2, warnings: 1 },
       tool: { name: "moniq" },
     };
@@ -151,6 +154,7 @@ describe("sarifFormatter", () => {
           message: 'Missing required script "build"',
           packageName: "my-package",
           packagePath: "/packages/my-package",
+          plugin: "scripts",
           ruleId: "scripts/missing",
           ruleName: "Missing required script",
           severity: "error",
@@ -177,12 +181,13 @@ describe("sarifFormatter", () => {
           message: 'Missing required script "build"',
           packageName: "my-package",
           packagePath: "/packages/my-package",
+          plugin: "scripts",
           ruleId: "scripts/missing",
           ruleName: "Missing required script",
           scriptName: "build",
           severity: "error",
         },
-      ],
+      ] as Diagnostic[],
       summary: { errors: 1, passed: false, total: 1, warnings: 0 },
       tool: { name: "moniq" },
     };

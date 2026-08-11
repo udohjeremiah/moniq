@@ -64,7 +64,7 @@ It answers questions like:
 
 ## Policies
 
-Moniq isn't built around scripts, files, or any single kind of check.
+Moniq isn't built around files, scripts, or any single kind of check.
 
 It's built around **policies**.
 

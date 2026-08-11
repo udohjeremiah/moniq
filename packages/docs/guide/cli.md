@@ -23,9 +23,8 @@ moniq init [options]
 - Installs Moniq as a development dependency.
 - Creates a starter configuration.
 
-`init` requires a monorepo workspace. It fails (without writing a
-configuration) when run outside a workspace or in a single-package
-repository.
+`init` requires a monorepo workspace. It fails (without writing a configuration)
+when run outside a workspace or in a single-package repository.
 
 ## `moniq check`
 

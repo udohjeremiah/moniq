@@ -22,7 +22,7 @@
   },
   "dependencies": {
     "@moniq/config": "workspace:*",
-    "@moniq/core": "workspace:*",
+    "@moniq/plugins": "workspace:*",
     "@moniq/workspace": "workspace:*",
     "cac": "^7.0.0"
   },
