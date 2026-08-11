@@ -1,20 +1,16 @@
-import type { FileKind, FilePolicy } from "@moniq/config";
+import type {
+  PluginPolicyDefinition,
+  PluginReportInput,
+} from "@moniq/config/plugins";
 
-import { type Package, readPackageJson } from "@moniq/workspace";
-import path from "node:path";
+import type { FileKind, FilePolicy, FixAction } from "./constants.js";
 
-import type { Diagnostic } from "./index.js";
-
-import { pickPolicy } from "./matching.js";
+import { filePolicySchema } from "./schema.js";
+import { filesSubjects, type FileTarget } from "./subjects.js";
 
 interface FixTarget {
   fix: string | undefined;
-  fixAction: "create" | "delete" | "mkdir" | "write" | undefined;
-}
-
-interface PackageContext {
-  packageName: string;
-  packagePath: string;
+  fixAction: FixAction | undefined;
 }
 
 interface PathState {
@@ -24,46 +20,20 @@ interface PathState {
   isSymbolicLink: boolean;
 }
 
-export async function resolveFilePolicies(
-  filesConfig: Record<string, FilePolicy | FilePolicy[]> | undefined,
-  root: string,
-  packages_: Package[],
-) {
-  const diagnostics: Diagnostic[] = [];
-  const entries = Object.entries(filesConfig ?? {});
+const NO_FIX: FixTarget = { fix: undefined, fixAction: undefined };
 
-  for (const [relativePath, policyOrArray] of entries) {
-    const policies = Array.isArray(policyOrArray)
-      ? policyOrArray
-      : [policyOrArray];
-
-    const policy = pickPolicy(policies, relativePath);
-
-    if (policy === undefined || policy.severity === "off") {
-      continue;
-    }
-
-    const absolutePath = resolveWithinRoot(root, relativePath);
-    const context = await getPackageContext(packages_, root, absolutePath);
-
-    await resolvePolicy(
-      policy,
-      relativePath,
-      absolutePath,
-      context,
-      diagnostics,
-    );
-  }
-
-  return diagnostics;
-}
+export const filePolicy: PluginPolicyDefinition<typeof filePolicySchema> = {
+  schema: filePolicySchema,
+  subjects: filesSubjects,
+  validate({ policy, report, subject }) {
+    return resolvePolicy(policy, subject, report);
+  },
+};
 
 async function contentDiagnostic(
   policy: FilePolicy,
   relativePath: string,
   absolutePath: string,
-  context: PackageContext,
-  severity: Diagnostic["severity"],
 ) {
   const content = policy.content;
 
@@ -86,26 +56,17 @@ async function contentDiagnostic(
 
   return {
     actual,
-    domain: "files",
     expected: isExactContent ? content : undefined,
     file: relativePath,
     fix: fixTarget.fix,
     fixAction: fixTarget.fixAction,
     message: `Unexpected contents for "${relativePath}"`,
-    packageName: context.packageName,
-    packagePath: context.packagePath,
     ruleId: "files/content-mismatch",
     ruleName: "Unexpected contents",
-    severity,
   };
 }
 
-const NO_FIX: FixTarget = { fix: undefined, fixAction: undefined };
-
-function createFix(
-  policy: FilePolicy,
-  expectedKind: FileKind | undefined,
-): FixTarget {
+function createFix(policy: FilePolicy, expectedKind: FileKind | undefined) {
   const canAutofix =
     policy.autofix &&
     expectedKind !== undefined &&
@@ -117,13 +78,13 @@ function createFix(
   }
 
   if (expectedKind === "directory") {
-    return { fix: undefined, fixAction: "mkdir" };
+    return { fix: undefined, fixAction: "mkdir" } satisfies FixTarget;
   }
 
   return {
     fix: typeof policy.content === "string" ? policy.content : "",
     fixAction: "create",
-  };
+  } satisfies FixTarget;
 }
 
 function describeExpectedKind(expectedKind: FileKind | undefined) {
@@ -159,47 +120,7 @@ function describeKind(state: PathState) {
   return "a symbolic link";
 }
 
-async function getPackageContext(
-  packages_: Package[],
-  root: string,
-  absolutePath: string,
-) {
-  let best: Package | undefined;
-  let bestLength = -1;
-
-  for (const package_ of packages_) {
-    const packagePath = path.resolve(package_.path);
-    const isContains =
-      absolutePath === packagePath ||
-      absolutePath.startsWith(`${packagePath}${path.sep}`);
-
-    if (isContains && packagePath.length > bestLength) {
-      best = package_;
-      bestLength = packagePath.length;
-    }
-  }
-
-  const packagePath = best?.path ?? root;
-
-  return {
-    packageName: await getPackageName(packagePath),
-    packagePath,
-  };
-}
-
-async function getPackageName(packagePath: string) {
-  try {
-    const packageJson = await readPackageJson(
-      path.join(packagePath, "package.json"),
-    );
-    const name = packageJson["name"];
-    return typeof name === "string" ? name : path.basename(packagePath);
-  } catch {
-    return path.basename(packagePath);
-  }
-}
-
-async function inspectPath(absolutePath: string): Promise<PathState> {
+async function inspectPath(absolutePath: string) {
   try {
     const { lstat } = await import("node:fs/promises");
     const stats = await lstat(absolutePath);
@@ -236,70 +157,47 @@ function kindDiagnostic(
   expectedKind: string,
   state: PathState,
   relativePath: string,
-  context: PackageContext,
-  severity: Diagnostic["severity"],
 ) {
   return {
-    domain: "files",
     file: relativePath,
     message: `Expected ${describeExpectedKindPhrase(expectedKind)} but found ${describeKind(state)} at "${relativePath}"`,
-    packageName: context.packageName,
-    packagePath: context.packagePath,
     ruleId: "files/kind",
     ruleName: "Unexpected kind",
-    severity,
   };
 }
 
-function missingDiagnostic(
-  policy: FilePolicy,
-  expectedKind: FileKind | undefined,
-  relativePath: string,
-  context: PackageContext,
-  severity: Diagnostic["severity"],
-) {
+function missingDiagnostic(policy: FilePolicy, relativePath: string) {
+  const expectedKind = policy.kind;
   const fixTarget = createFix(policy, expectedKind);
   const expected = describeExpectedKind(expectedKind);
-  const message = `Missing required ${expected} "${relativePath}"`;
 
   return {
-    domain: "files",
     file: relativePath,
     fix: fixTarget.fix,
     fixAction: fixTarget.fixAction,
-    message,
-    packageName: context.packageName,
-    packagePath: context.packagePath,
+    message: `Missing required ${expected} "${relativePath}"`,
     ruleId: "files/missing",
     ruleName: `Missing required ${expected}`,
-    severity,
   };
 }
 
 async function resolvePolicy(
   policy: FilePolicy,
-  relativePath: string,
-  absolutePath: string,
-  context: PackageContext,
-  diagnostics: Diagnostic[],
+  subject: unknown,
+  report: (input: PluginReportInput) => void,
 ) {
+  const { absolutePath, relativePath } = subject as FileTarget;
   const presence = policy.presence ?? "required";
-  const severity = policy.severity ?? "error";
-  const expectedKind = policy.kind;
 
   const state = await inspectPath(absolutePath);
 
   if (presence === "required" && !state.exists) {
-    diagnostics.push(
-      missingDiagnostic(policy, expectedKind, relativePath, context, severity),
-    );
+    report(missingDiagnostic(policy, relativePath));
     return;
   }
 
   if (presence === "forbidden" && state.exists) {
-    diagnostics.push(
-      unexpectedDiagnostic(policy, state, relativePath, context, severity),
-    );
+    report(unexpectedDiagnostic(policy, state, relativePath));
     return;
   }
 
@@ -308,9 +206,7 @@ async function resolvePolicy(
     policy.kind !== undefined &&
     !isKindMatch(policy.kind, state)
   ) {
-    diagnostics.push(
-      kindDiagnostic(policy.kind, state, relativePath, context, severity),
-    );
+    report(kindDiagnostic(policy.kind, state, relativePath));
     return;
   }
 
@@ -322,50 +218,25 @@ async function resolvePolicy(
     policy,
     relativePath,
     absolutePath,
-    context,
-    severity,
   );
 
   if (diagnostic !== undefined) {
-    diagnostics.push(diagnostic);
+    report(diagnostic);
   }
-}
-
-function resolveWithinRoot(root: string, relativePath: string) {
-  const absolutePath = path.resolve(root, relativePath);
-  const relative = path.relative(root, absolutePath);
-
-  if (
-    path.isAbsolute(relative) ||
-    relative === ".." ||
-    relative.startsWith(`..${path.sep}`)
-  ) {
-    throw new TypeError(
-      `Invalid files path "${relativePath}": must be within the workspace root`,
-    );
-  }
-
-  return absolutePath;
 }
 
 function unexpectedDiagnostic(
   policy: FilePolicy,
   state: PathState,
   relativePath: string,
-  context: PackageContext,
-  severity: Diagnostic["severity"],
 ) {
   return {
-    domain: "files",
     file: relativePath,
-    fixAction: policy.autofix ? ("delete" as const) : undefined,
+    fixAction: policy.autofix ? "delete" : undefined,
     message: unexpectedMessage(state, relativePath),
-    packageName: context.packageName,
-    packagePath: context.packagePath,
     ruleId: "files/unexpected",
     ruleName: unexpectedRuleName(state),
-    severity,
-  };
+  } satisfies PluginReportInput;
 }
 
 function unexpectedMessage(state: PathState, relativePath: string) {
@@ -388,9 +259,9 @@ function unexpectedRuleName(state: PathState) {
   return "Unexpected file";
 }
 
-function writeFix(policy: FilePolicy, content: string): FixTarget {
+function writeFix(policy: FilePolicy, content: string) {
   if (!policy.autofix) {
     return NO_FIX;
   }
-  return { fix: content, fixAction: "write" };
+  return { fix: content, fixAction: "write" } satisfies FixTarget;
 }

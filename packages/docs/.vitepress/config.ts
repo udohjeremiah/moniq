@@ -56,6 +56,7 @@ export default defineConfig({
         text: "Configuration",
         items: [
           { text: "Overview", link: "/guide/configuration" },
+          { text: "Plugins", link: "/guide/plugins" },
           { text: "File Policies", link: "/guide/file-policies" },
           { text: "Script Policies", link: "/guide/script-policies" },
         ],

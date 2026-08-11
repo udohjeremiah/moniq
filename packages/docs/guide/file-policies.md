@@ -8,7 +8,7 @@ Each key under `files` is a workspace-relative file path. Its value is either a
 
 ## `FilePolicy`
 
-`FilePolicy` extends the shared [`BasePolicy`](/guide/configuration#basepolicy),
+`FilePolicy` extends the shared [`Policy`](/guide/configuration#policy),
 so it inherits its options.
 
 | Option    | Type                                 | Default | Description                                                                             |
@@ -100,8 +100,8 @@ export default defineConfig({
 
 Autofixes are limited to the following operations:
 
-- create missing `presence: "required"` files or directories (only when
-  `kind` is explicitly set to `"file"` or `"directory"`)
+- create missing `presence: "required"` files or directories (only when `kind`
+  is explicitly set to `"file"` or `"directory"`)
 - remove `presence: "forbidden"` items
 - overwrite files whose `content` is an exact string when their contents differ
 

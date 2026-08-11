@@ -36,11 +36,11 @@ export default defineConfig({
 });
 ```
 
-## `BasePolicy`
+## `Policy`
 
-Every built-in policy extends the shared `BasePolicy` interface. The options
+Every built-in policy extends the shared `Policy` interface. The options
 below are therefore available on every policy object. Plugins should also extend
-`BasePolicy` to inherit the same matching and diagnostic behavior.
+`Policy` to inherit the same matching and diagnostic behavior.
 
 | Option        | Type                                      | Default      | Description                                                              |
 | ------------- | ----------------------------------------- | ------------ | ------------------------------------------------------------------------ |
@@ -126,7 +126,7 @@ export default defineConfig({
       },
 
       // Packages outside packages/ match no policy,
-      // so Moniq skips validation for their build script.
+      // so Moniq skips validation for their `build` script.
     ],
   },
 });

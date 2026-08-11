@@ -1,4 +1,4 @@
-import type { Diagnostic, Report } from "@moniq/core";
+import type { Diagnostic, Report } from "@moniq/plugins";
 
 import { describe, expect, it } from "vitest";
 
@@ -9,13 +9,14 @@ const makeDiagnostic = (overrides?: Partial<Diagnostic>): Diagnostic => ({
   message: 'Missing required script "build"',
   packageName: "@moniq/core",
   packagePath: "/packages/core",
+  plugin: "scripts",
   ruleId: "scripts/missing",
   ruleName: "Missing required script",
   severity: "error",
   ...overrides,
 });
 
-function makeReport(diagnostics: Diagnostic[]): Report {
+function makeReport(diagnostics: Diagnostic[]) {
   const errors = diagnostics.filter((d) => d.severity === "error").length;
   const warnings = diagnostics.filter((d) => d.severity === "warn").length;
   return {

@@ -1,4 +1,4 @@
-import type { Report } from "@moniq/core";
+import type { Diagnostic, Report } from "@moniq/plugins";
 
 import { describe, expect, it } from "vitest";
 
@@ -28,12 +28,13 @@ describe("jsonFormatter", () => {
           message: 'Missing required script "build"',
           packageName: "@moniq/core",
           packagePath: "/packages/core",
+          plugin: "scripts",
           ruleId: "scripts/missing",
           ruleName: "Missing required script",
           scriptName: "build",
           severity: "error",
         },
-      ],
+      ] as Diagnostic[],
       summary: { errors: 1, passed: false, total: 1, warnings: 0 },
       tool: { name: "moniq" },
     };

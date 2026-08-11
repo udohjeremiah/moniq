@@ -22,14 +22,14 @@
   },
   "dependencies": {
     "@moniq/config": "workspace:*",
-    "@moniq/core": "workspace:*",
+    "@moniq/plugins": "workspace:*",
     "@moniq/workspace": "workspace:*",
     "cac": "^7.0.0"
   },
   "devDependencies": {
     "@moniq/eslint-config": "workspace:*",
     "@moniq/typescript-config": "workspace:*",
-    "tsdown": "^0.22.4",
+    "tsdown": "^0.22.14",
     "vitest": "^4.1.10"
   }
 }

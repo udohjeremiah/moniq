@@ -1,23 +1,21 @@
 import { loadConfig } from "@moniq/config";
-import { resolve } from "@moniq/core";
+import {
+  applyFixes,
+  type Diagnostic,
+  type FixSummary,
+  type Report,
+  resolve,
+} from "@moniq/plugins";
 import { discoverWorkspace, findWorkspaceRoot } from "@moniq/workspace";
 import { styleText } from "node:util";
 
-import { applyFileFixes } from "../files.js";
-import { applyFixes, type Fixer, type FixSummary } from "../fix.js";
 import { type Format, formatReport } from "../format.js";
-import { applyScriptFixes } from "../scripts.js";
 
 export interface CheckOptions {
   fix?: boolean;
   format?: Format;
   isDryRun?: boolean;
 }
-
-const fixers: Fixer[] = [
-  { apply: applyFileFixes, domain: "files" },
-  { apply: applyScriptFixes, domain: "scripts" },
-];
 
 export async function check(options: CheckOptions) {
   const cwd = process.cwd();
@@ -42,11 +40,18 @@ export async function check(options: CheckOptions) {
   let fixSummary: FixSummary | undefined;
 
   if (options.fix) {
-    fixSummary = await applyFixes(fixers, report.results, {
+    fixSummary = await applyFixes(report.results, {
       isDryRun: options.isDryRun,
       root,
     });
   }
+
+  const finalReport =
+    fixSummary !== undefined &&
+    !fixSummary.isDryRun &&
+    fixSummary.fixedDiagnostics.length > 0
+      ? withoutFixed(report, fixSummary.fixedDiagnostics)
+      : report;
 
   if (options.format !== "json") {
     console.log(
@@ -55,7 +60,7 @@ export async function check(options: CheckOptions) {
   }
 
   console.log(
-    formatReport(report, {
+    formatReport(finalReport, {
       format: options.format,
       isDryRun: options.isDryRun,
     }),
@@ -71,5 +76,28 @@ export async function check(options: CheckOptions) {
     }
   }
 
-  return report;
+  return finalReport;
+}
+
+function withoutFixed(report: Report, fixed: Diagnostic[]): Report {
+  const results = report.results.filter((d) => !fixed.includes(d));
+  const errors = results.reduce(
+    (count, d) => count + Number(d.severity === "error"),
+    0,
+  );
+  const warnings = results.reduce(
+    (count, d) => count + Number(d.severity === "warn"),
+    0,
+  );
+
+  return {
+    ...report,
+    results,
+    summary: {
+      errors,
+      passed: errors === 0,
+      total: results.length,
+      warnings,
+    },
+  };
 }

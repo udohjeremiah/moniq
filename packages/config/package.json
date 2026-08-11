@@ -7,6 +7,10 @@
     ".": {
       "types": "./dist/index.d.ts",
       "import": "./dist/index.js"
+    },
+    "./plugins": {
+      "types": "./dist/plugins.d.ts",
+      "import": "./dist/plugins.js"
     }
   },
   "scripts": {
@@ -18,12 +22,12 @@
     "test": "vitest run"
   },
   "dependencies": {
-    "typebox": "^1.3.6"
+    "typebox": "^1.3.12"
   },
   "devDependencies": {
     "@moniq/eslint-config": "workspace:*",
     "@moniq/typescript-config": "workspace:*",
-    "tsdown": "^0.22.4",
+    "tsdown": "^0.22.14",
     "vitest": "^4.1.10"
   }
 }

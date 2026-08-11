@@ -4,6 +4,6 @@ export default defineConfig({
   deps: {
     alwaysBundle: [/^@moniq\//],
   },
-  entry: ["src/cli.ts", "src/index.ts"],
+  entry: ["src/cli.ts", "src/index.ts", "src/plugins.ts"],
   outExtensions: () => ({ js: ".js" }),
 });

@@ -1,4 +1,4 @@
-import type { Diagnostic, Report } from "@moniq/core";
+import type { Diagnostic, Report } from "@moniq/plugins";
 
 import { styleText } from "node:util";
 
@@ -122,12 +122,7 @@ function pushDiagnostic(lines: string[], d: Diagnostic, isDryRun?: boolean) {
   lines.push(`  ${icon} ${badge}  ${d.message}  ${styleText("dim", d.ruleId)}`);
 
   if (d.file) {
-    let loc = "";
-    if (d.line !== undefined) {
-      const col = d.column === undefined ? "" : `:${String(d.column)}`;
-      loc = `:${String(d.line)}${col}`;
-    }
-    lines.push(`${indent}${styleText("dim", d.file + loc)}`);
+    lines.push(`${indent}${styleText("dim", d.file)}`);
   }
 
   if (d.expected && d.actual) {

@@ -1,4 +1,4 @@
-import type { Diagnostic, Report } from "@moniq/core";
+import type { Diagnostic, Report } from "@moniq/plugins";
 
 import type { Formatter } from "../format.js";
 
@@ -28,10 +28,6 @@ interface SarifLocation {
       index: number;
       uri: string;
       uriBaseId?: string;
-    };
-    region?: {
-      startColumn?: number;
-      startLine?: number;
     };
   };
 }
@@ -105,13 +101,6 @@ function buildResult(
       },
     },
   };
-
-  if (d.line !== undefined) {
-    location.physicalLocation.region = {
-      startLine: d.line,
-      ...(d.column !== undefined && { startColumn: d.column }),
-    };
-  }
 
   locations.push(location);
   result.locations = locations;
@@ -205,7 +194,7 @@ function deduplicateRules(diagnostics: Diagnostic[]) {
       name: d.ruleName,
       properties: {
         domain: d.domain,
-        ...(d.plugin && { plugin: d.plugin }),
+        plugin: d.plugin,
       },
       shortDescription: { text: d.message },
     };

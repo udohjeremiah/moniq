@@ -33,7 +33,11 @@ export const baseConfig = [
     languageOptions: {
       parserOptions: {
         projectService: {
-          allowDefaultProject: ["base.js", "node.js", "eslint.config.js"],
+          allowDefaultProject: [
+            "{base.js,packages/*/base.js}",
+            "{node.js,packages/*/node.js}",
+            "{eslint.config.js,packages/*/eslint.config.js}",
+          ],
         },
       },
     },
@@ -42,6 +46,7 @@ export const baseConfig = [
       "unused-imports": unusedImports,
     },
     rules: {
+      "@typescript-eslint/consistent-type-imports": "error",
       "@typescript-eslint/no-unused-vars": "off",
       "import-x/no-default-export": "error",
       "import-x/order": "off",
