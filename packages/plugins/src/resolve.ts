@@ -44,7 +44,52 @@ export async function resolveAll(
   return buildReport(diagnostics);
 }
 
-export async function resolveDomain(
+function buildReport(diagnostics: Diagnostic[]) {
+  const errors = diagnostics.reduce(
+    (count, d) => count + Number(d.severity === "error"),
+    0,
+  );
+  const warnings = diagnostics.reduce(
+    (count, d) => count + Number(d.severity === "warn"),
+    0,
+  );
+
+  return {
+    results: diagnostics,
+    summary: {
+      errors,
+      passed: errors === 0,
+      total: diagnostics.length,
+      warnings,
+    },
+    tool: { name: "moniq" },
+  };
+}
+
+function defaultSubjects(
+  configValue: unknown,
+  root: string,
+  packages: Package[],
+) {
+  const policies = Array.isArray(configValue) ? configValue : [configValue];
+
+  return packages.map((package_) => ({
+    package: { path: package_.path },
+    policies,
+    relativePath: path.relative(root, package_.path),
+    value: undefined,
+  }));
+}
+
+function packageName(
+  packageJson: Record<string, unknown>,
+  packagePath: string,
+) {
+  const name = packageJson["name"];
+  return typeof name === "string" ? name : path.basename(packagePath);
+}
+
+async function resolveDomain(
   domain: RegisteredPluginDomain,
   config: UserConfig,
   root: string,
@@ -113,51 +158,6 @@ export async function resolveDomain(
   }
 
   return diagnostics;
-}
-
-function buildReport(diagnostics: Diagnostic[]) {
-  const errors = diagnostics.reduce(
-    (count, d) => count + Number(d.severity === "error"),
-    0,
-  );
-  const warnings = diagnostics.reduce(
-    (count, d) => count + Number(d.severity === "warn"),
-    0,
-  );
-
-  return {
-    results: diagnostics,
-    summary: {
-      errors,
-      passed: errors === 0,
-      total: diagnostics.length,
-      warnings,
-    },
-    tool: { name: "moniq" },
-  };
-}
-
-function defaultSubjects(
-  configValue: unknown,
-  root: string,
-  packages: Package[],
-) {
-  const policies = Array.isArray(configValue) ? configValue : [configValue];
-
-  return packages.map((package_) => ({
-    package: { path: package_.path },
-    policies,
-    relativePath: path.relative(root, package_.path),
-    value: undefined,
-  }));
-}
-
-function packageName(
-  packageJson: Record<string, unknown>,
-  packagePath: string,
-) {
-  const name = packageJson["name"];
-  return typeof name === "string" ? name : path.basename(packagePath);
 }
 
 function validateSchema(schema: TSchema, policy: unknown, domain: string) {

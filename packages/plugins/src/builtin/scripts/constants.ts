@@ -1,13 +1,7 @@
 import type { Policy } from "@moniq/config";
+import type { Type } from "@moniq/config/plugins";
 
-import { PolicyType, Type } from "@moniq/config/plugins";
-
-import { scriptPolicySchema } from "./schema.js";
-
-export const scriptPolicyFullSchema = Type.Intersect([
-  PolicyType,
-  scriptPolicySchema,
-]);
+import type { scriptPolicySchema } from "./schema.js";
 
 export interface ScriptDiagnosticFields {
   actual?: string;
@@ -23,4 +17,4 @@ export interface ScriptDiagnosticFields {
  *
  * Inherits the policy options from {@link Policy}.
  */
-export type ScriptPolicy = Type.Static<typeof scriptPolicyFullSchema>;
+export type ScriptPolicy = Policy & Type.Static<typeof scriptPolicySchema>;

@@ -1,15 +1,7 @@
 import type { Policy } from "@moniq/config";
+import type { Type } from "@moniq/config/plugins";
 
-import { PolicyType, Type } from "@moniq/config/plugins";
-
-import type { fileKind } from "./schema.js";
-
-import { filePolicySchema } from "./schema.js";
-
-export const filePolicyFullSchema = Type.Intersect([
-  PolicyType,
-  filePolicySchema,
-]);
+import type { fileKind, filePolicySchema } from "./schema.js";
 
 export interface FileDiagnosticFields {
   actual?: string;
@@ -28,6 +20,6 @@ export type FileKind = Type.Static<typeof fileKind>;
  *
  * Inherits the policy options from {@link Policy}.
  */
-export type FilePolicy = Type.Static<typeof filePolicyFullSchema>;
+export type FilePolicy = Policy & Type.Static<typeof filePolicySchema>;
 
 export type FixAction = "create" | "delete" | "mkdir" | "write";
