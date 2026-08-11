@@ -4,9 +4,6 @@
   "workspaces": {
     ".": {
       "ignore": [".agents/**"]
-    },
-    "packages/moniq": {
-      "ignoreDependencies": ["typebox"]
     }
   }
 }

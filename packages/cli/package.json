@@ -29,7 +29,7 @@
   "devDependencies": {
     "@moniq/eslint-config": "workspace:*",
     "@moniq/typescript-config": "workspace:*",
-    "tsdown": "^0.22.4",
+    "tsdown": "^0.22.14",
     "vitest": "^4.1.10"
   }
 }
