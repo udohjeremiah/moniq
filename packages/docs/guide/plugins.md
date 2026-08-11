@@ -6,7 +6,7 @@ conventions, and workspace rules.
 A plugin contributes one policy domain with:
 
 - `name` — logical configuration key
-- `policy` — schema and validation logic
+- `policy` — policy schema and validation hooks
 - `subjects()` — optional function that creates validation targets
 - `validate()` — function that reports violations
 
@@ -21,7 +21,7 @@ implementations in [`packages/plugins/src/builtin`](https://github.com/udohjerem
 
 Declare `@udohjeremiah/moniq` as a peer dependency.
 
-The plugin API is intentionally exposed only through:
+The plugin authoring API is exposed only through the dedicated subpath:
 
 ```ts
 import { PolicyType, Type, definePlugin } from "@udohjeremiah/moniq/plugins";
@@ -107,6 +107,7 @@ export async function packageMetadataSubjects(
   const policies = (
     Array.isArray(config) ? config : [config]
   ) as PackageMetadataPolicy[];
+
   const subjects: PolicySubject[] = [];
 
   for (const package_ of packages) {
@@ -134,14 +135,8 @@ export async function packageMetadataSubjects(
 
 `value` is plugin-specific data and becomes `context.subject` in `validate()`.
 
-This keeps package metadata loading lazy: a plugin only reads the files it
-actually needs.
-
-> [!note]
-> When a plugin defines `subjects()`, Moniq reads each subject's `policies`
-> as-is and does not fill them in later. Return the policies that govern each
-> subject — for a value-shaped domain (a single policy or array applied across
-> all packages) that is the domain's own config value, as in the example.
+This keeps package metadata loading lazy: Moniq itself does not eagerly read
+package metadata for every plugin.
 
 ## 4. Define the Validator
 
@@ -167,6 +162,7 @@ export const packageMetadataPolicy: PluginPolicyDefinition<
 > = {
   schema: packageMetadataSchema,
   subjects: packageMetadataSubjects,
+
   validate({ policy, report, subject }) {
     const { packageJson } = subject as PackageMetadataSubject;
 
@@ -236,7 +232,7 @@ report({
 ```
 
 Moniq supplies engine-owned diagnostic fields such as the policy domain, plugin,
-package path, and severity.
+package path, package name, and severity.
 
 ### Custom Diagnostic Fields
 
