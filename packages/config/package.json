@@ -22,7 +22,7 @@
     "test": "vitest run"
   },
   "dependencies": {
-    "typebox": "^1.3.6"
+    "typebox": "^1.3.12"
   },
   "devDependencies": {
     "@moniq/eslint-config": "workspace:*",
