@@ -259,7 +259,10 @@ function installArguments(pm: string, version?: string) {
 
 function installPackage(pm: string, root: string, version?: string) {
   return new Promise<void>((resolve, reject) => {
-    const child = execFile(pm, installArguments(pm, version), { cwd: root });
+    const child = execFile(pm, installArguments(pm, version), {
+      cwd: root,
+      shell: true,
+    });
     let stderr = "";
     child.stderr?.on("data", (chunk: Buffer) => {
       stderr += chunk.toString();

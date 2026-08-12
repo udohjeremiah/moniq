@@ -96,7 +96,7 @@ export async function discoverWorkspace(root: string) {
       output = execFileSync(
         pmBin("npm"),
         ["ls", "--workspaces", "--all", "--json", "--depth", "0"],
-        { cwd: root, encoding: "utf8" },
+        { cwd: root, encoding: "utf8", shell: true },
       );
       const tree = JSON.parse(output) as {
         dependencies?: Record<string, { path: string }>;
@@ -109,7 +109,7 @@ export async function discoverWorkspace(root: string) {
       output = execFileSync(
         pmBin("pnpm"),
         ["ls", "-r", "--depth", "-1", "--json"],
-        { cwd: root, encoding: "utf8" },
+        { cwd: root, encoding: "utf8", shell: true },
       );
       const packages = JSON.parse(output) as { path: string }[];
       return packages.map((entry) => ({ path: entry.path }));
@@ -118,6 +118,7 @@ export async function discoverWorkspace(root: string) {
       output = execFileSync(pmBin("yarn"), ["workspaces", "list", "--json"], {
         cwd: root,
         encoding: "utf8",
+        shell: true,
       });
       const lines = output.trim().split("\n").filter(Boolean);
       const packages = lines.map(

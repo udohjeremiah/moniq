@@ -1,3 +1,4 @@
+import path from "node:path";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { discoverWorkspace } from "./index.js";
@@ -46,7 +47,7 @@ describe("pnpm", () => {
     expect(execFileSync).toHaveBeenCalledWith(
       expect.any(String),
       ["ls", "-r", "--depth", "-1", "--json"],
-      { cwd: "/some/project", encoding: "utf8" },
+      { cwd: "/some/project", encoding: "utf8", shell: true },
     );
   });
 });
@@ -67,8 +68,8 @@ describe("yarn", () => {
     const result = await discoverWorkspace("/repo");
 
     expect(result).toHaveLength(2);
-    expect(result[0]).toEqual({ path: "/repo/packages/cli" });
-    expect(result[1]).toEqual({ path: "/repo/packages/core" });
+    expect(result[0]).toEqual({ path: path.resolve("/repo", "packages/cli") });
+    expect(result[1]).toEqual({ path: path.resolve("/repo", "packages/core") });
   });
 
   it("calls yarn workspaces list with the root directory", async () => {
@@ -79,7 +80,7 @@ describe("yarn", () => {
     expect(execFileSync).toHaveBeenCalledWith(
       expect.any(String),
       ["workspaces", "list", "--json"],
-      { cwd: "/some/project", encoding: "utf8" },
+      { cwd: "/some/project", encoding: "utf8", shell: true },
     );
   });
 });
@@ -115,7 +116,7 @@ describe("npm", () => {
     expect(execFileSync).toHaveBeenCalledWith(
       expect.any(String),
       ["ls", "--workspaces", "--all", "--json", "--depth", "0"],
-      { cwd: "/some/project", encoding: "utf8" },
+      { cwd: "/some/project", encoding: "utf8", shell: true },
     );
   });
 });
