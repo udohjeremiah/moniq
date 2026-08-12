@@ -1,5 +1,11 @@
 # moniq
 
+## 0.8.1
+
+### Patch Changes
+
+- 71ffae5: Fix `moniq init` failing on Windows with `spawn pnpm ENOENT` by spawning package manager commands through a shell.
+
 ## 0.8.0
 
 ### Minor Changes
