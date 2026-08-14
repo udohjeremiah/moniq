@@ -1,8 +1,0 @@
-{
-  "extends": "@moniq/typescript-config/node",
-  "compilerOptions": {
-    "outDir": "dist",
-    "rootDir": "."
-  },
-  "include": ["src/**/*.ts", "*.config.ts"]
-}

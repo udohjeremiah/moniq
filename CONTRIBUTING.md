@@ -52,7 +52,7 @@ pnpm run build
 > [Turborepo](https://turborepo.dev). All dependencies are installed from the
 > root — use the `-w` flag to add a root dependency (`pnpm add -D -w <pkg>`) and
 > `--filter` to add a dependency to a specific package
-> (`pnpm add --filter @moniq/plugins <pkg>`). You should never need to run
+> (`pnpm add --filter @moniq/core <pkg>`). You should never need to run
 > `pnpm install` inside individual packages.
 
 ## Project Structure
@@ -61,13 +61,12 @@ pnpm run build
 moniq/
 ├── packages/
 │   ├── cli/               # Command-line interface
-│   ├── config/            # Configuration loading and plugin API
+│   ├── core/              # Config API, plugin API, policy engine, and workspace utilities
 │   ├── docs/              # VitePress documentation site
 │   ├── eslint-config/     # Shared ESLint configuration preset
 │   ├── moniq/             # Public-facing entry point
-│   ├── plugins/           # Policy engine and built-in plugins
-│   ├── typescript-config/ # Shared TypeScript configuration presets
-│   └── workspace/         # Workspace and monorepo utilities
+│   ├── plugins/           # Built-in plugins
+│   └── typescript-config/ # Shared TypeScript configuration presets
 └── package.json           # Root workspace configuration
 ```
 
@@ -100,7 +99,7 @@ pnpm run format:fix
 pnpm run typecheck
 
 # Check a specific package
-pnpm --filter @moniq/plugins run typecheck
+pnpm --filter @moniq/core run typecheck
 ```
 
 ### Build
@@ -110,7 +109,7 @@ pnpm --filter @moniq/plugins run typecheck
 pnpm run build
 
 # Watch mode for a specific package
-pnpm --filter @moniq/plugins run dev
+pnpm --filter @moniq/core run dev
 ```
 
 ### Run Tests
@@ -120,7 +119,7 @@ pnpm --filter @moniq/plugins run dev
 pnpm run test
 
 # Run tests for a specific package
-pnpm --filter @moniq/plugins run test
+pnpm --filter @moniq/core run test
 ```
 
 ### Documentation
@@ -169,8 +168,8 @@ pnpm --filter @moniq/docs run build
 
    Follow the prompts to select `@udohjeremiah/moniq` as the changed package
    (it is the only published package — internal packages like `@moniq/cli`,
-   `@moniq/plugins`, etc. are bundled into it) and write a brief description of
-   the change. This generates a markdown file in `.changeset/` that the release
+   `@moniq/core`, etc. are bundled into it) and write a brief description of the
+   change. This generates a markdown file in `.changeset/` that the release
    workflow uses to create changelogs.
 
    > **When to add a changeset**: Any change that affects the behaviour of

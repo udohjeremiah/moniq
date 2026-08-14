@@ -1,13 +1,14 @@
-export { definePlugin, PolicyType, Type } from "@moniq/config/plugins";
-
+export { definePlugin, Type } from "@moniq/core";
 export type {
   Diagnostic,
   MoniqPlugin,
+  MoniqPluginPolicies,
   PluginPackage,
   PluginPolicyDefinition,
   PluginReportInput,
   PluginValidator,
+  Policy,
   PolicyContext,
   PolicySchema,
   PolicySubject,
-} from "@moniq/config/plugins";
+} from "@moniq/core";
