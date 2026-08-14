@@ -1,10 +1,10 @@
 # File Policies
 
-The `files` policy domain validates workspace-relative files, directories, and
-symlinks across your workspace.
+The `files` policy domain validates files, directories, and symlinks across your
+workspace.
 
-Each key under `files` is a workspace-relative file path. Its value is either a
-`FilePolicy` or an array of `FilePolicy`s.
+Each key under `files` is the path of a file, directory, or symlink. Its value
+is either a `FilePolicy` or an array of `FilePolicy`s.
 
 ## `FilePolicy`
 
@@ -74,6 +74,7 @@ Require file contents to exactly match a string.
 export default defineConfig({
   files: {
     ".nvmrc": {
+      include: ["."],
       kind: "file",
       content: "24",
     },
@@ -116,6 +117,7 @@ export default defineConfig({
       autofix: true,
     },
     ".nvmrc": {
+      include: ["."],
       kind: "file",
       content: "24",
       autofix: true,

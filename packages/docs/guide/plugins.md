@@ -11,7 +11,7 @@ A plugin contributes one policy domain with:
 - `validate()` — function that reports violations
 
 Built-in policies use the same API and are available as reference
-implementations in [`packages/plugins/src/builtin`](https://github.com/udohjeremiah/moniq/tree/main/packages/plugins/src/builtin).
+implementations in [`moniq/packages/plugins`](https://github.com/udohjeremiah/moniq/tree/main/packages/plugins).
 
 > [!tip]
 > Use the `moniq-plugin-<name>` naming convention. A plugin named
@@ -24,7 +24,7 @@ Declare `@udohjeremiah/moniq` as a peer dependency.
 The plugin authoring API is exposed only through the dedicated subpath:
 
 ```ts
-import { PolicyType, Type, definePlugin } from "@udohjeremiah/moniq/plugins";
+import { Type, definePlugin } from "@udohjeremiah/moniq/plugins";
 ```
 
 `Type` is re-exported from the plugin subpath, so plugin authors do not need
@@ -52,21 +52,15 @@ export const packageMetadataSchema = Type.Object({
 
 ## 2. Define the Policy Type
 
-Derive the complete policy type from the shared `PolicyType` and your schema:
+Derive the complete policy type from the shared `Policy` and your schema:
 
 ```ts
-import { PolicyType, Type } from "@udohjeremiah/moniq/plugins";
+import type { Policy, Type } from "@udohjeremiah/moniq/plugins";
 
 import { packageMetadataSchema } from "./schema.js";
 
-export const packageMetadataFullSchema = Type.Intersect([
-  PolicyType,
-  packageMetadataSchema,
-]);
-
-export type PackageMetadataPolicy = Type.Static<
-  typeof packageMetadataFullSchema
->;
+export type PackageMetadataPolicy = Policy &
+  Type.Static<typeof packageMetadataSchema>;
 ```
 
 This keeps the runtime schema and TypeScript type synchronized.

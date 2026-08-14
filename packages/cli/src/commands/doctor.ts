@@ -1,5 +1,4 @@
-import { loadConfig } from "@moniq/config";
-import { discoverWorkspace, findWorkspaceRoot } from "@moniq/workspace";
+import { discoverWorkspace, findWorkspaceRoot, loadConfig } from "@moniq/core";
 import { styleText } from "node:util";
 
 interface DoctorIssue {

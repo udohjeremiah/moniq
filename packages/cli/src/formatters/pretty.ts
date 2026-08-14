@@ -1,4 +1,4 @@
-import type { Diagnostic, Report } from "@moniq/plugins";
+import type { Diagnostic, Report } from "@moniq/core";
 
 import { styleText } from "node:util";
 

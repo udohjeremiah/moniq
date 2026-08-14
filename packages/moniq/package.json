@@ -61,7 +61,7 @@
   },
   "devDependencies": {
     "@moniq/cli": "workspace:*",
-    "@moniq/config": "workspace:*",
+    "@moniq/core": "workspace:*",
     "@moniq/eslint-config": "workspace:*",
     "@moniq/plugins": "workspace:*",
     "@moniq/typescript-config": "workspace:*",

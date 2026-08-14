@@ -38,9 +38,9 @@ export default defineConfig({
 
 ## `Policy`
 
-Every built-in policy extends the shared `Policy` interface. The options
-below are therefore available on every policy object. Plugins should also extend
-`Policy` to inherit the same matching and diagnostic behavior.
+Every policy uses the shared `Policy` options below. Plugin authors import
+`Policy` from `@udohjeremiah/moniq/plugins` and extend it with their schema (see
+[Plugins](/guide/plugins)) to inherit the same matching and diagnostic behavior.
 
 | Option        | Type                                      | Default      | Description                                                              |
 | ------------- | ----------------------------------------- | ------------ | ------------------------------------------------------------------------ |
@@ -52,14 +52,15 @@ below are therefore available on every policy object. Plugins should also extend
 
 ## Policy Matching
 
-Package paths are always relative to the workspace root.
+Domain keys are resolved relative to each matched package. Package paths used
+for `include` and `exclude` are always relative to the workspace root.
 
 Each policy accepts either a single policy object or an array of policy objects.
 
-When using the array form, Moniq evaluates policy objects **top-to-bottom** and
-uses the **first matching policy**.
+When an array is used, Moniq evaluates policies **top-to-bottom** and uses the
+**first matching policy**.
 
-Think of it like a `switch` statement: list the most specific policies first and
+Think of it like a `switch` statement: put the most specific policies first and
 the catch-all last.
 
 Special glob values:
@@ -91,8 +92,8 @@ export default defineConfig({
 });
 ```
 
-If the order were reversed, the `packages/legacy` policy is never evaluated
-because `include: ["*"]` matches first:
+If the order is reversed, the specific policy is never reached because
+`include: ["*"]` matches first:
 
 ```ts
 export default defineConfig({

@@ -1,12 +1,15 @@
-import { loadConfig } from "@moniq/config";
+import { discoverWorkspace, findWorkspaceRoot, loadConfig } from "@moniq/core";
 import {
   applyFixes,
+  createRegistry,
   type Diagnostic,
   type FixSummary,
   type Report,
-  resolve,
-} from "@moniq/plugins";
-import { discoverWorkspace, findWorkspaceRoot } from "@moniq/workspace";
+  resolveAll,
+} from "@moniq/core";
+// Importing `@moniq/plugins` registers the builtin plugin pack so the engine
+// resolves the `files` and `scripts` domains without extra setup.
+import "@moniq/plugins";
 import { styleText } from "node:util";
 
 import { type Format, formatReport } from "../format.js";
@@ -35,7 +38,8 @@ export async function check(options: CheckOptions) {
     throw new Error("No workspace packages found.");
   }
 
-  const report = await resolve(config, root, packages);
+  const registry = createRegistry(config);
+  const report = await resolveAll(registry.domains, config, root, packages);
 
   let fixSummary: FixSummary | undefined;
 

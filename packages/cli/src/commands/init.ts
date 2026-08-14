@@ -6,7 +6,7 @@ import {
   type PackageJson,
   type PackageManager,
   readPackageJson,
-} from "@moniq/workspace";
+} from "@moniq/core";
 import { execFile } from "node:child_process";
 import { access } from "node:fs/promises";
 import path from "node:path";
@@ -258,11 +258,16 @@ function installArguments(pm: string, version?: string) {
 }
 
 function installPackage(pm: string, root: string, version?: string) {
+  const installArguments_ = installArguments(pm, version);
+  const child =
+    process.platform === "win32"
+      ? execFile([pm, ...installArguments_].join(" "), {
+          cwd: root,
+          shell: true,
+        })
+      : execFile(pm, installArguments_, { cwd: root });
+
   return new Promise<void>((resolve, reject) => {
-    const child = execFile(pm, installArguments(pm, version), {
-      cwd: root,
-      shell: true,
-    });
     let stderr = "";
     child.stderr?.on("data", (chunk: Buffer) => {
       stderr += chunk.toString();
@@ -312,7 +317,7 @@ function printDetectedInfo(
   console.log(`    ${dim(labelPad("Workspace:"))} ${magenta(workspaceLabel)}`);
   if (workspacePackages.length > 1) {
     for (const package_ of workspacePackages) {
-      const relativePath = path.relative(cwd, package_.path);
+      const relativePath = path.relative(cwd, package_.path) || ".";
       const bullet = dim(`• ${relativePath}`);
       console.log(`    ${labelIndent}${bullet}`);
     }

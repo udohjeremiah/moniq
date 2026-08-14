@@ -1,4 +1,4 @@
-import type { Diagnostic, Report } from "@moniq/plugins";
+import type { Diagnostic, Report } from "@moniq/core";
 
 import { describe, expect, it } from "vitest";
 

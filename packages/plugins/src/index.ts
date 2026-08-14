@@ -1,75 +1,17 @@
-import type { UserConfig } from "@moniq/config";
-import type { Package } from "@moniq/workspace";
+import { registerPluginPack } from "@moniq/core";
 
-import type {
-  FileDiagnosticFields,
-  FilePolicy,
-} from "./builtin/files/constants.js";
-import type {
-  ScriptDiagnosticFields,
-  ScriptPolicy,
-} from "./builtin/scripts/constants.js";
+import { filesPlugin } from "./files/index.js";
+import { scriptsPlugin } from "./scripts/index.js";
 
-import { createRegistry } from "./registry.js";
-import { resolveAll } from "./resolve.js";
+export type { FilePolicy } from "./files/constants.js";
+export { filesPlugin } from "./files/index.js";
 
-export {
-  type FileDiagnosticFields,
-  type FilePolicy,
-  type FixAction,
-} from "./builtin/files/constants.js";
-export type {
-  ScriptDiagnosticFields,
-  ScriptPolicy,
-} from "./builtin/scripts/constants.js";
+export type { ScriptPolicy } from "./scripts/constants.js";
+export { scriptsPlugin } from "./scripts/index.js";
 
-export { applyFixes, type FixOptions, type FixSummary } from "./fix.js";
-export { isMatchAny, pickPolicy } from "./matching.js";
-export {
-  createRegistry,
-  PluginRegistry,
-  type RegisteredPluginDomain,
-} from "./registry.js";
-export { type Report } from "./resolve.js";
+export const builtinPlugins = [filesPlugin, scriptsPlugin];
 
-export type { Policy, Presence, Severity } from "@moniq/config";
-export { definePlugin } from "@moniq/config/plugins";
-export type {
-  Diagnostic,
-  MoniqPlugin,
-  MoniqPluginPolicies,
-  PluginPackage,
-  PluginPolicyDefinition,
-  PluginReportInput,
-  PluginValidator,
-  PolicyContext,
-  PolicySchema,
-  PolicySubject,
-} from "@moniq/config/plugins";
-
-export async function resolve(
-  config: UserConfig,
-  root: string,
-  packages: Package[],
-) {
-  const registry = createRegistry(config);
-  return resolveAll(registry.domains, config, root, packages);
-}
-
-declare module "@moniq/config/plugins" {
-  // eslint-disable-next-line @typescript-eslint/no-empty-object-type
-  interface Diagnostic extends FileDiagnosticFields {}
-
-  interface MoniqPluginPolicies {
-    files?: Record<string, FilePolicy | FilePolicy[]>;
-  }
-}
-
-declare module "@moniq/config/plugins" {
-  // eslint-disable-next-line @typescript-eslint/no-empty-object-type
-  interface Diagnostic extends ScriptDiagnosticFields {}
-
-  interface MoniqPluginPolicies {
-    scripts?: Record<string, ScriptPolicy | ScriptPolicy[]>;
-  }
-}
+// Registering the builtin plugin pack on import is required so the engine
+// resolves the builtin policy domains without extra setup.
+// eslint-disable-next-line unicorn/no-top-level-side-effects
+registerPluginPack(...builtinPlugins);
