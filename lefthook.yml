@@ -13,16 +13,18 @@ pre-commit:
       run: pnpm eslint --fix --max-warnings=0 {staged_files}
       stage_fixed: true
 
-commit-msg:
-  commands:
-    commitlint:
-      run: pnpm commitlint --edit {1}
-
 prepare-commit-msg:
   commands:
     commitizen:
       interactive: true
-      run: pnpm cz --hook || true
+      run: pnpm cz --hook
+      env:
+        LEFTHOOK: 0
+
+commit-msg:
+  commands:
+    commitlint:
+      run: pnpm commitlint --edit {1}
 
 pre-push:
   parallel: false
