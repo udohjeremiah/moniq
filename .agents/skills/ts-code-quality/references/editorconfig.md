@@ -1,4 +1,4 @@
-# EditorConfig Reference
+# EditorConfig Configuration Reference
 
 ## Purpose
 
@@ -34,7 +34,7 @@ trim_trailing_whitespace = false
 | `trim_trailing_whitespace` | `true`  | Prevents noise diffs. Exception for `.md` files where trailing whitespace has semantic meaning in Markdown. |
 | `insert_final_newline`     | `true`  | POSIX standard; many tools expect files to end with a newline.                                              |
 
-## VS Code integration
+## Integration
 
-The VS Code `editorconfig.editorconfig` extension is recommended in
-`extensions.json` to automatically apply these settings.
+EditorConfig is supported by most editors out of the box, so these settings
+apply automatically without any configuration.

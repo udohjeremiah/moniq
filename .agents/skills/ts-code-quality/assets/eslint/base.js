@@ -43,6 +43,7 @@ const config = [
       "unused-imports": unusedImports,
     },
     rules: {
+      "@typescript-eslint/consistent-type-imports": "error",
       "@typescript-eslint/no-unused-vars": "off",
       "import-x/no-default-export": "error",
       "import-x/order": "off",

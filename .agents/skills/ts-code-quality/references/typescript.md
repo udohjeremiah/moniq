@@ -51,7 +51,7 @@ All strict flags enabled:
 ## Next.js variant (`nextjs.json`)
 
 - Extends `react.json`.
-- Adds `plugins: [{ name: "next" }]` for VS Code IntelliSense.
+- Adds `plugins: [{ name: "next" }]` for Next.js IntelliSense.
 - Adds `incremental: true` for faster builds.
 - Includes `next-env.d.ts` and `.next/types/**/*.ts`.
 
@@ -59,11 +59,13 @@ All strict flags enabled:
 
 - Extends `react.json`.
 - Adds `types: ["vite/client"]` for Vite-specific types.
-- Adds `allowImportingTsExtensions: true` — TanStack Start uses `.ts` imports in source.
+- Adds `allowImportingTsExtensions: true` — TanStack Start uses `.ts` imports in
+  source.
 
 ## Node variant (`node.json`)
 
-- `module: "NodeNext"` / `moduleResolution: "NodeNext"` — For direct Node.js execution.
+- `module: "NodeNext"` / `moduleResolution: "NodeNext"` — For direct Node.js
+  execution.
 - `types: ["node"]` — Node.js type definitions.
 
 ## Per-package composition
