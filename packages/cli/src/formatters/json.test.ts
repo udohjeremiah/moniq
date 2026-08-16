@@ -31,7 +31,6 @@ describe("jsonFormatter", () => {
           plugin: "scripts",
           ruleId: "scripts/missing",
           ruleName: "Missing required script",
-          scriptName: "build",
           severity: "error",
         },
       ] as Diagnostic[],

@@ -1,76 +1,80 @@
-import type { PluginPolicyDefinition } from "@moniq/core";
+import type { PluginPackage, PluginValidator } from "@moniq/core";
 
-import { getScript, isMatchAny } from "@moniq/core";
+import {
+  getScript,
+  isMatchAny,
+  readPackageJson,
+  setScript,
+  writePackageJson,
+} from "@moniq/core";
+import path from "node:path";
 
-import { scriptPolicySchema } from "./schema.js";
-import { scriptsSubjects, type ScriptTarget } from "./subjects.js";
+import type { ScriptPolicy } from "./constants.js";
+import type { ScriptTarget } from "./subjects.js";
 
-export const scriptPolicy: PluginPolicyDefinition<typeof scriptPolicySchema> = {
-  schema: scriptPolicySchema,
-  subjects: scriptsSubjects,
+export const scriptValidator: PluginValidator<ScriptPolicy> = ({
+  package: package_,
+  policy,
+  report,
+  subject,
+}) => {
+  const { packageJson, relativePath, scriptName } = subject as ScriptTarget;
+  const hasScript = getScript(packageJson, scriptName) !== undefined;
+  const presence = policy.presence ?? "required";
+  const command = policy.command;
 
-  validate({ policy, report, subject }) {
-    const { packageJson, relativePath, scriptName } = subject as ScriptTarget;
-    const hasScript = getScript(packageJson, scriptName) !== undefined;
-    const presence = policy.presence ?? "required";
-
-    if (presence === "required" && !hasScript) {
-      report({
-        fix:
-          policy.autofix && typeof policy.command === "string"
-            ? policy.command
-            : undefined,
-        message: `Missing required script "${scriptName}"`,
-        ruleId: "scripts/missing",
-        ruleName: "Missing required script",
-        scriptName,
-      });
-      return;
-    }
-
-    if (presence === "forbidden" && hasScript) {
-      report({
-        message: `Unexpected script "${scriptName}"`,
-        ruleId: "scripts/unexpected",
-        ruleName: "Unexpected script",
-        scriptName,
-      });
-      return;
-    }
-
-    if (policy.command === undefined || !hasScript) {
-      return;
-    }
-
-    if (
-      policy.allowCustomCommands !== undefined &&
-      isMatchAny(policy.allowCustomCommands, relativePath)
-    ) {
-      return;
-    }
-
-    const actualCommand = getScript(packageJson, scriptName);
-
-    if (
-      actualCommand !== undefined &&
-      isCommandMatch(actualCommand, policy.command)
-    ) {
-      return;
-    }
-
+  if (presence === "required" && !hasScript) {
     report({
-      actual: actualCommand,
-      expected: typeof policy.command === "string" ? policy.command : undefined,
       fix:
-        policy.autofix && typeof policy.command === "string"
-          ? policy.command
+        typeof command === "string"
+          ? scriptFix(package_, scriptName, command)
           : undefined,
-      message: `Unexpected command for script "${scriptName}"`,
-      ruleId: "scripts/command-mismatch",
-      ruleName: "Unexpected command",
-      scriptName,
+      message: `Missing required script "${scriptName}"`,
+      ruleId: "scripts/missing",
+      ruleName: "Missing required script",
     });
-  },
+    return;
+  }
+
+  if (presence === "forbidden" && hasScript) {
+    report({
+      message: `Unexpected script "${scriptName}"`,
+      ruleId: "scripts/unexpected",
+      ruleName: "Unexpected script",
+    });
+    return;
+  }
+
+  if (command === undefined || !hasScript) {
+    return;
+  }
+
+  if (
+    policy.allowCustomCommands !== undefined &&
+    isMatchAny(policy.allowCustomCommands, relativePath)
+  ) {
+    return;
+  }
+
+  const actualCommand = getScript(packageJson, scriptName);
+
+  if (actualCommand !== undefined && isCommandMatch(actualCommand, command)) {
+    return;
+  }
+
+  report({
+    fix:
+      typeof command === "string"
+        ? scriptFix(package_, scriptName, command)
+        : undefined,
+    message: `Unexpected command for script "${scriptName}"`,
+    metadata: {
+      actual: actualCommand,
+      expected: typeof command === "string" ? command : undefined,
+    },
+    ruleId: "scripts/command-mismatch",
+    ruleName: "Unexpected command",
+  });
 };
 
 function isCommandMatch(
@@ -84,4 +88,17 @@ function isCommandMatch(
     return expected.test(actual);
   }
   return actual === expected;
+}
+
+function scriptFix(
+  package_: PluginPackage,
+  scriptName: string,
+  command: string,
+) {
+  return async () => {
+    const packageJsonPath = path.join(package_.path, "package.json");
+    const freshPackageJson = await readPackageJson(packageJsonPath);
+    setScript(freshPackageJson, scriptName, command);
+    await writePackageJson(packageJsonPath, freshPackageJson);
+  };
 }

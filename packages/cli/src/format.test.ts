@@ -46,13 +46,6 @@ describe("formatPretty", () => {
     expect(result).toContain("Missing required script");
   });
 
-  it("includes fix suggestion when present", () => {
-    const d = makeDiagnostic({ fix: "eslint .", severity: "warn" });
-    const result = formatReport(makeReport([d]), { format: "pretty" });
-    expect(result).toContain("Fix:");
-    expect(result).toContain("eslint .");
-  });
-
   it("groups diagnostics by package", () => {
     const result = formatReport(
       makeReport([
@@ -67,7 +60,11 @@ describe("formatPretty", () => {
 
   it("shows expected/actual when provided", () => {
     const result = formatReport(
-      makeReport([makeDiagnostic({ actual: "tsc", expected: "tsc --noEmit" })]),
+      makeReport([
+        makeDiagnostic({
+          metadata: { actual: "tsc", expected: "tsc --noEmit" },
+        }),
+      ]),
       { format: "pretty" },
     );
     expect(result).toContain("tsc --noEmit");
@@ -97,34 +94,26 @@ describe("formatPretty", () => {
 });
 
 describe("formatPretty dry-run", () => {
-  it("shows Would fix: instead of Fix: when isDryRun is true", () => {
-    const d = makeDiagnostic({ fix: "tsup" });
-    const result = formatReport(makeReport([d]), {
-      format: "pretty",
-      isDryRun: true,
-    });
-    expect(result).toContain("Would fix:");
-    expect(result).not.toContain("Fix:");
-    expect(result).toContain("tsup");
-  });
-
   it("includes dry-run summary line when fixes are available", () => {
     const result = formatReport(
       makeReport([
-        makeDiagnostic({ fix: "eslint .", severity: "error" }),
-        makeDiagnostic({ fix: "tsup", severity: "error" }),
+        makeDiagnostic({
+          fix: async () => {
+            await Promise.resolve();
+          },
+          severity: "error",
+        }),
+        makeDiagnostic({
+          fix: async () => {
+            await Promise.resolve();
+          },
+          severity: "error",
+        }),
       ]),
       { format: "pretty", isDryRun: true },
     );
     expect(result).toContain("2 fixes available");
     expect(result).toContain("2 problems");
-  });
-
-  it("shows Fix: normally when isDryRun is not set", () => {
-    const d = makeDiagnostic({ fix: "tsup" });
-    const result = formatReport(makeReport([d]), { format: "pretty" });
-    expect(result).toContain("Fix:");
-    expect(result).not.toContain("Would fix:");
   });
 });
 

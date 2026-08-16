@@ -29,15 +29,33 @@ async function createTemporaryDirectory() {
   return mkdtemp(path.join(tmpdir(), "moniq-core-test-"));
 }
 
+async function readFixturePackageJson(root: string, relativePath: string) {
+  const { readFile } = await import("node:fs/promises");
+  return JSON.parse(
+    await readFile(path.join(root, relativePath), "utf8"),
+  ) as Record<string, Record<string, unknown>>;
+}
+
 async function resolve(config: UserConfig, root: string, packages: Package[]) {
   const registry = createRegistry(config);
-  return resolveAll(registry.domains, config, root, packages);
+  const result = await resolveAll(registry.domains, config, root, packages);
+  return result.report;
 }
 
 function rootPack(root: string, ...relativePaths: string[]) {
   return relativePaths.map((relative) => ({
     path: path.join(root, relative),
   }));
+}
+
+async function run(
+  config: UserConfig,
+  root: string,
+  packages: Package[],
+  options?: Parameters<typeof resolveAll>[4],
+) {
+  const registry = createRegistry(config);
+  return resolveAll(registry.domains, config, root, packages, options);
 }
 
 describe("scripts", () => {
@@ -88,7 +106,6 @@ describe("scripts", () => {
         plugin: "scripts",
         ruleId: "scripts/missing",
         ruleName: "Missing required script",
-        scriptName: "build",
         severity: "error",
       },
     ]);
@@ -110,21 +127,22 @@ describe("scripts", () => {
     };
 
     const report = await resolve(config, root, rootPack(root, "."));
-    expect(report.results).toEqual([
-      {
+    expect(report.results).toHaveLength(1);
+    expect(report.results[0]).toMatchObject({
+      domain: "scripts",
+      message: 'Unexpected command for script "build"',
+      metadata: {
         actual: "tsc",
-        domain: "scripts",
         expected: "tsup",
-        message: 'Unexpected command for script "build"',
-        packageName: "root",
-        packagePath: path.join(root, "."),
-        plugin: "scripts",
-        ruleId: "scripts/command-mismatch",
-        ruleName: "Unexpected command",
-        scriptName: "build",
-        severity: "error",
       },
-    ]);
+      packageName: "root",
+      packagePath: path.join(root, "."),
+      plugin: "scripts",
+      ruleId: "scripts/command-mismatch",
+      ruleName: "Unexpected command",
+      severity: "error",
+    });
+    expect(report.results[0]?.fix).toBeTypeOf("function");
     await rm(root, { recursive: true });
   });
 
@@ -365,7 +383,7 @@ describe("scripts", () => {
     };
 
     const report = await resolve(config, root, rootPack(root, "."));
-    expect(report.results[0]?.fix).toBe("tsup");
+    expect(report.results[0]?.fix).toBeTypeOf("function");
     await rm(root, { recursive: true });
   });
 
@@ -413,6 +431,79 @@ describe("scripts", () => {
 
     const report = await resolve(config, root, rootPack(root, "."));
     expect(report.results).toEqual([]);
+    await rm(root, { recursive: true });
+  });
+
+  it("adds a missing script when the fix is applied", async () => {
+    const root = await createTemporaryDirectory();
+    await createFixture(root, {
+      ".": { name: "root", scripts: {} },
+    });
+
+    const config: UserConfig = {
+      scripts: {
+        build: { autofix: true, command: "tsup", presence: "required" },
+      },
+    };
+
+    const result = await run(config, root, rootPack(root, "."), { fix: true });
+    expect(result.fixSummary?.isDryRun).toBe(false);
+    expect(result.fixSummary?.fixed).toBe(1);
+    expect(result.fixSummary?.errors).toBe(0);
+    expect(result.fixSummary?.fixedDiagnostics[0]?.ruleId).toBe(
+      "scripts/missing",
+    );
+
+    const packageJson = await readFixturePackageJson(root, "package.json");
+    expect(packageJson["scripts"]?.["build"]).toBe("tsup");
+    await rm(root, { recursive: true });
+  });
+
+  it("counts the fix in dry-run without writing", async () => {
+    const root = await createTemporaryDirectory();
+    await createFixture(root, {
+      ".": { name: "root", scripts: {} },
+    });
+
+    const config: UserConfig = {
+      scripts: {
+        build: { autofix: true, command: "tsup", presence: "required" },
+      },
+    };
+
+    const result = await run(config, root, rootPack(root, "."), {
+      fix: true,
+      isDryRun: true,
+    });
+    expect(result.fixSummary?.isDryRun).toBe(true);
+    expect(result.fixSummary?.fixed).toBe(1);
+    expect(result.fixSummary?.fixedDiagnostics).toEqual([]);
+
+    const packageJson = await readFixturePackageJson(root, "package.json");
+    expect(packageJson["scripts"]?.["build"]).toBeUndefined();
+    await rm(root, { recursive: true });
+  });
+
+  it("updates a mismatched command when the fix is applied", async () => {
+    const root = await createTemporaryDirectory();
+    await createFixture(root, {
+      ".": { name: "root", scripts: { build: "tsc" } },
+    });
+
+    const config: UserConfig = {
+      scripts: {
+        build: { autofix: true, command: "tsup" },
+      },
+    };
+
+    const result = await run(config, root, rootPack(root, "."), { fix: true });
+    expect(result.fixSummary?.fixed).toBe(1);
+    expect(result.fixSummary?.fixedDiagnostics[0]?.ruleId).toBe(
+      "scripts/command-mismatch",
+    );
+
+    const packageJson = await readFixturePackageJson(root, "package.json");
+    expect(packageJson["scripts"]?.["build"]).toBe("tsup");
     await rm(root, { recursive: true });
   });
 });

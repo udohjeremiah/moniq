@@ -10,10 +10,19 @@ import type {
 } from "../plugins/plugins.js";
 import type { RegisteredPluginDomain } from "../plugins/registry.js";
 import type { Package } from "../workspace/workspace.js";
+import type { Policy } from "./policy.js";
 
 import { PolicyType } from "../plugins/plugins.js";
 import { readPackageJson } from "../workspace/package-json.js";
 import { pickPolicy } from "./matching.js";
+
+export interface FixSummary {
+  errors: number;
+  fixed: number;
+  fixedDiagnostics: Diagnostic[];
+  isDryRun: boolean;
+  packageCount: number;
+}
 
 export interface Report {
   results: Diagnostic[];
@@ -29,19 +38,113 @@ export interface Report {
   };
 }
 
+export interface ResolveResult {
+  /** Fix summary, present only when `RunOptions.fix` is enabled. */
+  fixSummary?: FixSummary;
+
+  /** Baseline report of all resolved diagnostics (before fix filtering). */
+  report: Report;
+}
+
+export interface RunOptions {
+  /** Whether to apply autofixes after resolving policies. */
+  fix?: boolean;
+
+  /** Preview fixes without modifying anything on disk. */
+  isDryRun?: boolean;
+}
+
+interface FixRun {
+  available: number;
+  errors: number;
+  fixedDiagnostics: Diagnostic[];
+  isDryRun: boolean;
+  packages: Set<string>;
+}
+
 export async function resolveAll(
   registry: Iterable<RegisteredPluginDomain>,
   config: UserConfig,
   root: string,
   packages: Package[],
-) {
+  options: RunOptions = {},
+): Promise<ResolveResult> {
   const diagnostics: Diagnostic[] = [];
+  const fixRun =
+    options.fix === true ? createFixRun(options.isDryRun === true) : undefined;
 
   for (const domain of registry) {
-    diagnostics.push(...(await resolveDomain(domain, config, root, packages)));
+    diagnostics.push(
+      ...(await resolveDomain(domain, config, root, packages, fixRun)),
+    );
   }
 
-  return buildReport(diagnostics);
+  return {
+    fixSummary: fixRun === undefined ? undefined : buildFixSummary(fixRun),
+    report: buildReport(diagnostics),
+  };
+}
+
+async function applyFix(policy: Policy, current: Diagnostic[], fixRun: FixRun) {
+  if (fixRun.isDryRun || !isAutofixEnabled(policy) || current.length === 0) {
+    return;
+  }
+
+  for (const diagnostic of current) {
+    if (diagnostic.fix === undefined) {
+      continue;
+    }
+    try {
+      await diagnostic.fix();
+      fixRun.fixedDiagnostics.push(diagnostic);
+      fixRun.packages.add(diagnostic.packagePath);
+    } catch {
+      fixRun.errors++;
+    }
+  }
+}
+
+async function applyFixRun(
+  policy: Policy,
+  diagnostics: Diagnostic[],
+  fixRun: FixRun,
+) {
+  if (fixRun.isDryRun) {
+    if (!isAutofixEnabled(policy)) {
+      return;
+    }
+
+    const fixable = diagnostics.filter(
+      (d) => d.fix !== undefined && d.severity !== "off",
+    );
+    fixRun.available += fixable.length;
+    for (const diagnostic of fixable) {
+      fixRun.packages.add(diagnostic.packagePath);
+    }
+    return;
+  }
+
+  await applyFix(policy, diagnostics, fixRun);
+}
+
+function buildFixSummary(run: FixRun): FixSummary {
+  if (run.isDryRun) {
+    return {
+      errors: run.errors,
+      fixed: run.available,
+      fixedDiagnostics: [],
+      isDryRun: true,
+      packageCount: run.packages.size,
+    };
+  }
+
+  return {
+    errors: run.errors,
+    fixed: run.fixedDiagnostics.length,
+    fixedDiagnostics: run.fixedDiagnostics,
+    isDryRun: false,
+    packageCount: run.packages.size,
+  };
 }
 
 function buildReport(diagnostics: Diagnostic[]) {
@@ -66,6 +169,39 @@ function buildReport(diagnostics: Diagnostic[]) {
   };
 }
 
+function createFixRun(isDryRun: boolean): FixRun {
+  return {
+    available: 0,
+    errors: 0,
+    fixedDiagnostics: [],
+    isDryRun,
+    packages: new Set(),
+  };
+}
+
+function createReporter(
+  domain: RegisteredPluginDomain,
+  subject: PolicySubject,
+  packageName: string,
+  severity: Diagnostic["severity"],
+) {
+  const diagnostics: Diagnostic[] = [];
+
+  const report = (input: PluginReportInput): void => {
+    diagnostics.push({
+      ...input,
+      domain: domain.domain,
+      packageName,
+      packagePath: subject.package.path,
+      plugin: domain.pluginName,
+      ruleName: input.ruleName,
+      severity,
+    });
+  };
+
+  return { diagnostics, report };
+}
+
 function defaultSubjects(
   configValue: unknown,
   root: string,
@@ -81,6 +217,10 @@ function defaultSubjects(
   }));
 }
 
+function isAutofixEnabled(policy: Policy) {
+  return (policy as { autofix?: unknown }).autofix === true;
+}
+
 function packageName(
   packageJson: Record<string, unknown>,
   packagePath: string,
@@ -94,6 +234,7 @@ async function resolveDomain(
   config: UserConfig,
   root: string,
   packages: Package[],
+  fixRun: FixRun | undefined,
 ) {
   const { definition } = domain;
   const diagnostics: Diagnostic[] = [];
@@ -136,25 +277,21 @@ async function resolveDomain(
     const packageName_ = packageName(packageJson, subject.package.path);
     const severity = policy.severity ?? "error";
 
-    const report = (input: PluginReportInput): void => {
-      diagnostics.push({
-        ...input,
-        domain: domain.domain,
-        packageName: packageName_,
-        packagePath: subject.package.path,
-        plugin: domain.pluginName,
-        ruleName: input.ruleName,
-        severity,
-      });
-    };
+    const reporter = createReporter(domain, subject, packageName_, severity);
 
     await definition.validate({
-      package: { path: subject.package.path },
+      package: subject.package,
       policy,
-      report,
+      report: reporter.report,
       subject: subject.value,
       workspace: { root },
     });
+
+    diagnostics.push(...reporter.diagnostics);
+
+    if (fixRun !== undefined) {
+      await applyFixRun(policy, reporter.diagnostics, fixRun);
+    }
   }
 
   return diagnostics;

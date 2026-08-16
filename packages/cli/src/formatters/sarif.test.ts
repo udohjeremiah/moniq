@@ -78,7 +78,6 @@ describe("sarifFormatter", () => {
           plugin: "scripts",
           ruleId: "scripts/missing",
           ruleName: "Missing required script",
-          scriptName: "build",
           severity: "error",
         },
         {
@@ -89,7 +88,6 @@ describe("sarifFormatter", () => {
           plugin: "scripts",
           ruleId: "scripts/missing",
           ruleName: "Missing required script",
-          scriptName: "test",
           severity: "error",
         },
       ] as Diagnostic[],
@@ -115,20 +113,17 @@ describe("sarifFormatter", () => {
           packagePath: "/packages/a",
           ruleId: "scripts/missing",
           ruleName: "Missing required script",
-          scriptName: "build",
           severity: "error",
         },
         {
-          actual: "tsc",
           domain: "scripts",
-          expected: "tsup",
           message: 'Unexpected command for script "test"',
+          metadata: { actual: "tsc", expected: "tsup" },
           packageName: "b",
           packagePath: "/packages/b",
           plugin: "scripts",
           ruleId: "scripts/command-mismatch",
           ruleName: "Unexpected command",
-          scriptName: "test",
           severity: "warn",
         },
       ] as Diagnostic[],
@@ -172,19 +167,20 @@ describe("sarifFormatter", () => {
     expect(artifacts?.[0]?.location.uri).toBe("/packages/my-package");
   });
 
-  it("fixes field maps to SARIF fixes", () => {
+  it("does not emit SARIF fixes", () => {
     const report: Report = {
       results: [
         {
           domain: "scripts",
-          fix: "tsup",
+          fix: async () => {
+            await Promise.resolve();
+          },
           message: 'Missing required script "build"',
           packageName: "my-package",
           packagePath: "/packages/my-package",
           plugin: "scripts",
           ruleId: "scripts/missing",
           ruleName: "Missing required script",
-          scriptName: "build",
           severity: "error",
         },
       ] as Diagnostic[],
@@ -196,8 +192,7 @@ describe("sarifFormatter", () => {
     const parsed = JSON.parse(output) as SarifLog;
     const results = parsed.runs[0]?.results ?? [];
 
-    expect(results[0]?.fixes).toBeDefined();
-    expect(results[0]?.fixes?.[0]?.description).toEqual({ text: "tsup" });
+    expect(results[0]?.fixes).toBeUndefined();
   });
 
   it("ends with a newline", () => {

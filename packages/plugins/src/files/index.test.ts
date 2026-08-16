@@ -41,15 +41,35 @@ async function createTemporaryDirectory() {
   return mkdtemp(path.join(tmpdir(), "moniq-core-test-"));
 }
 
+async function readFixtureFile(root: string, relativePath: string) {
+  const { readFile } = await import("node:fs/promises");
+  try {
+    return await readFile(path.join(root, relativePath), "utf8");
+  } catch {
+    return;
+  }
+}
+
 async function resolve(config: UserConfig, root: string, packages: Package[]) {
   const registry = createRegistry(config);
-  return resolveAll(registry.domains, config, root, packages);
+  const result = await resolveAll(registry.domains, config, root, packages);
+  return result.report;
 }
 
 function rootPack(root: string, ...relativePaths: string[]) {
   return relativePaths.map((relative) => ({
     path: path.join(root, relative),
   }));
+}
+
+async function run(
+  config: UserConfig,
+  root: string,
+  packages: Package[],
+  options?: Parameters<typeof resolveAll>[4],
+) {
+  const registry = createRegistry(config);
+  return resolveAll(registry.domains, config, root, packages, options);
 }
 
 describe("files", () => {
@@ -69,7 +89,6 @@ describe("files", () => {
     expect(report.results).toEqual([
       {
         domain: "files",
-        file: "README.md",
         message: 'Missing required path "README.md"',
         packageName: "root",
         packagePath: path.join(root, "."),
@@ -114,19 +133,18 @@ describe("files", () => {
     };
 
     const report = await resolve(config, root, rootPack(root, "."));
-    expect(report.results).toEqual([
-      {
-        domain: "files",
-        file: ".env",
-        message: 'Unexpected file ".env"',
-        packageName: "root",
-        packagePath: path.join(root, "."),
-        plugin: "files",
-        ruleId: "files/unexpected",
-        ruleName: "Unexpected file",
-        severity: "error",
-      },
-    ]);
+    expect(report.results).toHaveLength(1);
+    expect(report.results[0]).toMatchObject({
+      domain: "files",
+      message: 'Unexpected file ".env"',
+      packageName: "root",
+      packagePath: path.join(root, "."),
+      plugin: "files",
+      ruleId: "files/unexpected",
+      ruleName: "Unexpected file",
+      severity: "error",
+    });
+    expect(report.results[0]?.fix).toBeTypeOf("function");
     await rm(root, { recursive: true });
   });
 
@@ -143,19 +161,18 @@ describe("files", () => {
     };
 
     const report = await resolve(config, root, rootPack(root, "."));
-    expect(report.results).toEqual([
-      {
-        domain: "files",
-        file: "packages",
-        message: 'Missing required directory "packages"',
-        packageName: "root",
-        packagePath: path.join(root, "."),
-        plugin: "files",
-        ruleId: "files/missing",
-        ruleName: "Missing required directory",
-        severity: "error",
-      },
-    ]);
+    expect(report.results).toHaveLength(1);
+    expect(report.results[0]).toMatchObject({
+      domain: "files",
+      message: 'Missing required directory "packages"',
+      packageName: "root",
+      packagePath: path.join(root, "."),
+      plugin: "files",
+      ruleId: "files/missing",
+      ruleName: "Missing required directory",
+      severity: "error",
+    });
+    expect(report.results[0]?.fix).toBeTypeOf("function");
     await rm(root, { recursive: true });
   });
 
@@ -176,7 +193,6 @@ describe("files", () => {
     expect(report.results).toEqual([
       {
         domain: "files",
-        file: "README.md",
         message: `Expected a directory but found a file at "README.md"`,
         packageName: "root",
         packagePath: path.join(root, "."),
@@ -203,21 +219,22 @@ describe("files", () => {
     };
 
     const report = await resolve(config, root, rootPack(root, "."));
-    expect(report.results).toEqual([
-      {
+    expect(report.results).toHaveLength(1);
+    expect(report.results[0]).toMatchObject({
+      domain: "files",
+      message: 'Unexpected contents for ".npmrc"',
+      metadata: {
         actual: "auto-install-peers=false",
-        domain: "files",
         expected: "auto-install-peers=true",
-        file: ".npmrc",
-        message: 'Unexpected contents for ".npmrc"',
-        packageName: "root",
-        packagePath: path.join(root, "."),
-        plugin: "files",
-        ruleId: "files/content-mismatch",
-        ruleName: "Unexpected contents",
-        severity: "error",
       },
-    ]);
+      packageName: "root",
+      packagePath: path.join(root, "."),
+      plugin: "files",
+      ruleId: "files/content-mismatch",
+      ruleName: "Unexpected contents",
+      severity: "error",
+    });
+    expect(report.results[0]?.fix).toBeTypeOf("function");
     await rm(root, { recursive: true });
   });
 
@@ -330,7 +347,6 @@ describe("files", () => {
     expect(report.results).toHaveLength(1);
     expect(report.results[0]?.packageName).toBe("b");
     expect(report.results[0]?.packagePath).toBe(path.join(root, "packages/b"));
-    expect(report.results[0]?.file).toBe("packages/b/README.md");
     await rm(root, { recursive: true });
   });
 
@@ -347,8 +363,7 @@ describe("files", () => {
     };
 
     const report = await resolve(config, root, rootPack(root, "."));
-    expect(report.results[0]?.fixAction).toBe("create");
-    expect(report.results[0]?.fix).toBe("");
+    expect(report.results[0]?.fix).toBeTypeOf("function");
     await rm(root, { recursive: true });
   });
 
@@ -365,7 +380,6 @@ describe("files", () => {
     };
 
     const report = await resolve(config, root, rootPack(root, "."));
-    expect(report.results[0]?.fixAction).toBeUndefined();
     expect(report.results[0]?.fix).toBeUndefined();
     await rm(root, { recursive: true });
   });
@@ -384,8 +398,7 @@ describe("files", () => {
     };
 
     const report = await resolve(config, root, rootPack(root, "."));
-    expect(report.results[0]?.fixAction).toBe("delete");
-    expect(report.results[0]?.fix).toBeUndefined();
+    expect(report.results[0]?.fix).toBeTypeOf("function");
     await rm(root, { recursive: true });
   });
 
@@ -403,8 +416,7 @@ describe("files", () => {
     };
 
     const report = await resolve(config, root, rootPack(root, "."));
-    expect(report.results[0]?.fixAction).toBe("write");
-    expect(report.results[0]?.fix).toBe("auto-install-peers=true");
+    expect(report.results[0]?.fix).toBeTypeOf("function");
     await rm(root, { recursive: true });
   });
 
@@ -422,7 +434,6 @@ describe("files", () => {
     };
 
     const report = await resolve(config, root, rootPack(root, "."));
-    expect(report.results[0]?.fixAction).toBeUndefined();
     expect(report.results[0]?.fix).toBeUndefined();
     await rm(root, { recursive: true });
   });
@@ -440,8 +451,7 @@ describe("files", () => {
     };
 
     const report = await resolve(config, root, rootPack(root, "."));
-    expect(report.results[0]?.fixAction).toBe("mkdir");
-    expect(report.results[0]?.fix).toBeUndefined();
+    expect(report.results[0]?.fix).toBeTypeOf("function");
     await rm(root, { recursive: true });
   });
 
@@ -461,7 +471,6 @@ describe("files", () => {
     expect(report.results).toEqual([
       {
         domain: "files",
-        file: "docs/assets",
         message: 'Missing required symlink "docs/assets"',
         packageName: "root",
         packagePath: path.join(root, "."),
@@ -512,7 +521,6 @@ describe("files", () => {
     expect(report.results).toEqual([
       {
         domain: "files",
-        file: "link",
         message: `Expected a file but found a symbolic link at "link"`,
         packageName: "root",
         packagePath: path.join(root, "."),
@@ -540,19 +548,18 @@ describe("files", () => {
     };
 
     const report = await resolve(config, root, rootPack(root, "."));
-    expect(report.results).toEqual([
-      {
-        domain: "files",
-        file: "link",
-        message: 'Unexpected symbolic link "link"',
-        packageName: "root",
-        packagePath: path.join(root, "."),
-        plugin: "files",
-        ruleId: "files/unexpected",
-        ruleName: "Unexpected symbolic link",
-        severity: "error",
-      },
-    ]);
+    expect(report.results).toHaveLength(1);
+    expect(report.results[0]).toMatchObject({
+      domain: "files",
+      message: 'Unexpected symbolic link "link"',
+      packageName: "root",
+      packagePath: path.join(root, "."),
+      plugin: "files",
+      ruleId: "files/unexpected",
+      ruleName: "Unexpected symbolic link",
+      severity: "error",
+    });
+    expect(report.results[0]?.fix).toBeTypeOf("function");
     await rm(root, { recursive: true });
   });
 
@@ -569,7 +576,6 @@ describe("files", () => {
     };
 
     const report = await resolve(config, root, rootPack(root, "."));
-    expect(report.results[0]?.fixAction).toBeUndefined();
     expect(report.results[0]?.fix).toBeUndefined();
     await rm(root, { recursive: true });
   });
@@ -589,8 +595,7 @@ describe("files", () => {
     };
 
     const report = await resolve(config, root, rootPack(root, "."));
-    expect(report.results[0]?.fixAction).toBe("delete");
-    expect(report.results[0]?.fix).toBeUndefined();
+    expect(report.results[0]?.fix).toBeTypeOf("function");
     await rm(root, { recursive: true });
   });
 
@@ -633,10 +638,6 @@ describe("files", () => {
     );
     expect(report.results).toHaveLength(2);
     expect(report.results.map((d) => d.packageName)).toEqual(["a", "b"]);
-    expect(report.results.map((d) => d.file)).toEqual([
-      "packages/a/README.md",
-      "packages/b/README.md",
-    ]);
     await rm(root, { recursive: true });
   });
 
@@ -777,7 +778,6 @@ describe("files", () => {
     );
     expect(report.results).toHaveLength(1);
     expect(report.results[0]?.packageName).toBe("a");
-    expect(report.results[0]?.file).toBe("packages/a/.env");
     await rm(root, { recursive: true });
   });
 
@@ -796,6 +796,83 @@ describe("files", () => {
     await expect(resolve(config, root, rootPack(root, "."))).rejects.toThrow(
       "must be within the workspace root",
     );
+    await rm(root, { recursive: true });
+  });
+
+  it("creates a missing file when the fix is applied", async () => {
+    const root = await createTemporaryDirectory();
+    await createFixture(root, {
+      ".": { name: "root" },
+    });
+
+    const config: UserConfig = {
+      files: {
+        "README.md": {
+          autofix: true,
+          content: "hello",
+          kind: "file",
+          presence: "required",
+        },
+      },
+    };
+
+    const result = await run(config, root, rootPack(root, "."), {
+      fix: true,
+    });
+    expect(result.fixSummary?.isDryRun).toBe(false);
+    expect(result.fixSummary?.fixed).toBe(1);
+    expect(result.fixSummary?.errors).toBe(0);
+    expect(result.fixSummary?.fixedDiagnostics[0]?.ruleId).toBe(
+      "files/missing",
+    );
+    expect(await readFixtureFile(root, "README.md")).toBe("hello");
+    await rm(root, { recursive: true });
+  });
+
+  it("deletes a forbidden file when the fix is applied", async () => {
+    const root = await createTemporaryDirectory();
+    await createFixture(root, {
+      ".": { name: "root" },
+    });
+    await createFile(root, ".env", "SECRET=1");
+
+    const config: UserConfig = {
+      files: {
+        ".env": { autofix: true, presence: "forbidden" },
+      },
+    };
+
+    const result = await run(config, root, rootPack(root, "."), {
+      fix: true,
+    });
+    expect(result.fixSummary?.fixed).toBe(1);
+    expect(result.fixSummary?.fixedDiagnostics[0]?.ruleId).toBe(
+      "files/unexpected",
+    );
+    expect(await readFixtureFile(root, ".env")).toBeUndefined();
+    await rm(root, { recursive: true });
+  });
+
+  it("counts the fix in dry-run without writing", async () => {
+    const root = await createTemporaryDirectory();
+    await createFixture(root, {
+      ".": { name: "root" },
+    });
+
+    const config: UserConfig = {
+      files: {
+        "README.md": { autofix: true, kind: "file", presence: "required" },
+      },
+    };
+
+    const result = await run(config, root, rootPack(root, "."), {
+      fix: true,
+      isDryRun: true,
+    });
+    expect(result.fixSummary?.isDryRun).toBe(true);
+    expect(result.fixSummary?.fixed).toBe(1);
+    expect(result.fixSummary?.fixedDiagnostics).toEqual([]);
+    expect(await readFixtureFile(root, "README.md")).toBeUndefined();
     await rm(root, { recursive: true });
   });
 });

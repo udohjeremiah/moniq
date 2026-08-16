@@ -1,8 +1,14 @@
 import { definePlugin } from "@moniq/core";
 
-import { scriptPolicy } from "./validate.js";
+import { scriptPolicySchema } from "./schema.js";
+import { scriptsSubjects } from "./subjects.js";
+import { scriptValidator } from "./validate.js";
 
 export const scriptsPlugin = definePlugin({
   name: "scripts",
-  policy: scriptPolicy,
+  policy: {
+    schema: scriptPolicySchema,
+    subjects: scriptsSubjects,
+    validate: scriptValidator,
+  },
 });

@@ -84,7 +84,6 @@ function buildResult(
     message: { text: d.message },
     properties: {
       packageName: d.packageName,
-      ...(d.scriptName && { scriptName: d.scriptName }),
     },
     ruleId: d.ruleId,
     ruleIndex: Math.max(ruleIndex, 0),
@@ -104,24 +103,6 @@ function buildResult(
 
   locations.push(location);
   result.locations = locations;
-
-  if (d.fix) {
-    result.fixes = [
-      {
-        artifactChanges: [
-          {
-            artifactLocation: {
-              index: Math.max(artifactIndex, 0),
-              uri: d.packagePath,
-              uriBaseId: "ROOTPATH",
-            },
-            replacements: [],
-          },
-        ],
-        description: { text: d.fix },
-      },
-    ];
-  }
 
   if (d.metadata) {
     result.properties = { ...result.properties, ...d.metadata };
@@ -176,8 +157,8 @@ function collectArtifacts(diagnostics: Diagnostic[]) {
     }
   }
 
-  // eslint-disable-next-line unicorn/prefer-spread
-  return Array.from(seen.values());
+  // eslint-disable-next-line unicorn/prefer-iterator-to-array
+  return [...seen.values()];
 }
 
 function deduplicateRules(diagnostics: Diagnostic[]) {
@@ -201,8 +182,8 @@ function deduplicateRules(diagnostics: Diagnostic[]) {
     seen.set(d.ruleId, rule);
   }
 
-  // eslint-disable-next-line unicorn/prefer-spread
-  return Array.from(seen.values());
+  // eslint-disable-next-line unicorn/prefer-iterator-to-array
+  return [...seen.values()];
 }
 
 function toSarifLevel(severity: Diagnostic["severity"]) {

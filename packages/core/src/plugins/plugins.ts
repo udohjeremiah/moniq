@@ -3,7 +3,7 @@ import type { TSchema as SchemaType, Static as StaticSchema } from "typebox";
 import type { Diagnostic } from "../policy/diagnostic.js";
 import type { Policy } from "../policy/policy.js";
 
-export type { Diagnostic } from "../policy/diagnostic.js";
+export type { Diagnostic, DiagnosticMetadata } from "../policy/diagnostic.js";
 
 /**
  * A Moniq plugin.
