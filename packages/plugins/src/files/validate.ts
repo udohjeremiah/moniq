@@ -1,14 +1,10 @@
-import type { PluginPolicyDefinition, PluginReportInput } from "@moniq/core";
+import type { PluginReportInput, PluginValidator } from "@moniq/core";
 
-import type { FileKind, FilePolicy, FixAction } from "./constants.js";
+import path from "node:path";
 
-import { filePolicySchema } from "./schema.js";
-import { filesSubjects, type FileTarget } from "./subjects.js";
+import type { FilePolicy } from "./constants.js";
 
-interface FixTarget {
-  fix: string | undefined;
-  fixAction: FixAction | undefined;
-}
+import { type FileTarget } from "./subjects.js";
 
 interface PathState {
   exists: boolean;
@@ -17,14 +13,12 @@ interface PathState {
   isSymbolicLink: boolean;
 }
 
-const NO_FIX: FixTarget = { fix: undefined, fixAction: undefined };
-
-export const filePolicy: PluginPolicyDefinition<typeof filePolicySchema> = {
-  schema: filePolicySchema,
-  subjects: filesSubjects,
-  validate({ policy, report, subject }) {
-    return resolvePolicy(policy, subject, report);
-  },
+export const fileValidator: PluginValidator<FilePolicy> = ({
+  policy,
+  report,
+  subject,
+}) => {
+  return resolvePolicy(policy, subject, report);
 };
 
 async function contentDiagnostic(
@@ -49,42 +43,24 @@ async function contentDiagnostic(
     return;
   }
 
-  const fixTarget = isExactContent ? writeFix(policy, content) : NO_FIX;
+  let fix: (() => Promise<void>) | undefined;
+  if (typeof content === "string") {
+    fix = async () => {
+      const { writeFile } = await import("node:fs/promises");
+      await writeFile(absolutePath, content, "utf8");
+    };
+  }
 
   return {
-    actual,
-    expected: isExactContent ? content : undefined,
-    file: relativePath,
-    fix: fixTarget.fix,
-    fixAction: fixTarget.fixAction,
+    fix,
     message: `Unexpected contents for "${relativePath}"`,
+    metadata: { actual, expected: isExactContent ? content : undefined },
     ruleId: "files/content-mismatch",
     ruleName: "Unexpected contents",
   };
 }
 
-function createFix(policy: FilePolicy, expectedKind: FileKind | undefined) {
-  const canAutofix =
-    policy.autofix &&
-    expectedKind !== undefined &&
-    expectedKind !== "symlink" &&
-    (policy.content === undefined || typeof policy.content === "string");
-
-  if (!canAutofix) {
-    return NO_FIX;
-  }
-
-  if (expectedKind === "directory") {
-    return { fix: undefined, fixAction: "mkdir" } satisfies FixTarget;
-  }
-
-  return {
-    fix: typeof policy.content === "string" ? policy.content : "",
-    fixAction: "create",
-  } satisfies FixTarget;
-}
-
-function describeExpectedKind(expectedKind: FileKind | undefined) {
+function describeExpectedKind(expectedKind: string | undefined) {
   if (expectedKind === "directory") {
     return "directory";
   }
@@ -156,22 +132,38 @@ function kindDiagnostic(
   relativePath: string,
 ) {
   return {
-    file: relativePath,
     message: `Expected ${describeExpectedKindPhrase(expectedKind)} but found ${describeKind(state)} at "${relativePath}"`,
     ruleId: "files/kind",
     ruleName: "Unexpected kind",
   };
 }
 
-function missingDiagnostic(policy: FilePolicy, relativePath: string) {
+function missingDiagnostic(
+  policy: FilePolicy,
+  relativePath: string,
+  absolutePath: string,
+) {
   const expectedKind = policy.kind;
-  const fixTarget = createFix(policy, expectedKind);
   const expected = describeExpectedKind(expectedKind);
+  const canAutofix = expectedKind !== undefined && expectedKind !== "symlink";
+
+  let fix: (() => Promise<void>) | undefined;
+  if (canAutofix && expectedKind === "directory") {
+    fix = async () => {
+      const { mkdir } = await import("node:fs/promises");
+      await mkdir(absolutePath, { recursive: true });
+    };
+  } else if (canAutofix) {
+    fix = async () => {
+      const { mkdir, writeFile } = await import("node:fs/promises");
+      await mkdir(path.dirname(absolutePath), { recursive: true });
+      const content = typeof policy.content === "string" ? policy.content : "";
+      await writeFile(absolutePath, content, "utf8");
+    };
+  }
 
   return {
-    file: relativePath,
-    fix: fixTarget.fix,
-    fixAction: fixTarget.fixAction,
+    fix,
     message: `Missing required ${expected} "${relativePath}"`,
     ruleId: "files/missing",
     ruleName: `Missing required ${expected}`,
@@ -189,12 +181,12 @@ async function resolvePolicy(
   const state = await inspectPath(absolutePath);
 
   if (presence === "required" && !state.exists) {
-    report(missingDiagnostic(policy, relativePath));
+    report(missingDiagnostic(policy, relativePath, absolutePath));
     return;
   }
 
   if (presence === "forbidden" && state.exists) {
-    report(unexpectedDiagnostic(policy, state, relativePath));
+    report(unexpectedDiagnostic(state, relativePath, absolutePath));
     return;
   }
 
@@ -223,13 +215,15 @@ async function resolvePolicy(
 }
 
 function unexpectedDiagnostic(
-  policy: FilePolicy,
   state: PathState,
   relativePath: string,
+  absolutePath: string,
 ) {
   return {
-    file: relativePath,
-    fixAction: policy.autofix ? "delete" : undefined,
+    fix: async () => {
+      const { rm } = await import("node:fs/promises");
+      await rm(absolutePath, { force: true, recursive: true });
+    },
     message: unexpectedMessage(state, relativePath),
     ruleId: "files/unexpected",
     ruleName: unexpectedRuleName(state),
@@ -254,11 +248,4 @@ function unexpectedRuleName(state: PathState) {
     return "Unexpected symbolic link";
   }
   return "Unexpected file";
-}
-
-function writeFix(policy: FilePolicy, content: string) {
-  if (!policy.autofix) {
-    return NO_FIX;
-  }
-  return { fix: content, fixAction: "write" } satisfies FixTarget;
 }

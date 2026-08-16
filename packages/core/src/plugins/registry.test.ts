@@ -138,7 +138,7 @@ describe("plugin pipeline", () => {
       release: { version: "2.0.0" },
     } as UserConfig;
 
-    const report = await resolveAll(
+    const { report } = await resolveAll(
       createRegistry(config).domains,
       config,
       root,

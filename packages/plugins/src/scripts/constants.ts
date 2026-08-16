@@ -18,11 +18,12 @@ declare module "@udohjeremiah/moniq" {
 }
 
 declare module "@moniq/core" {
-  interface Diagnostic {
+  interface DiagnosticMetadata {
+    /** Actual value observed for mismatch-style violations. */
     actual?: string;
+
+    /** Expected value for mismatch-style violations. */
     expected?: string;
-    fix?: string;
-    scriptName?: string;
   }
 
   interface MoniqPluginPolicies {

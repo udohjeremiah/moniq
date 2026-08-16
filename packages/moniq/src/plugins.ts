@@ -1,6 +1,6 @@
 export { definePlugin, Type } from "@moniq/core";
 export type {
-  Diagnostic,
+  DiagnosticMetadata,
   MoniqPlugin,
   MoniqPluginPolicies,
   PluginPackage,

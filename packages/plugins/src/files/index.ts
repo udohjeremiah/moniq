@@ -1,8 +1,14 @@
 import { definePlugin } from "@moniq/core";
 
-import { filePolicy } from "./validate.js";
+import { filePolicySchema } from "./schema.js";
+import { filesSubjects } from "./subjects.js";
+import { fileValidator } from "./validate.js";
 
 export const filesPlugin = definePlugin({
   name: "files",
-  policy: filePolicy,
+  policy: {
+    schema: filePolicySchema,
+    subjects: filesSubjects,
+    validate: fileValidator,
+  },
 });

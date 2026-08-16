@@ -1,12 +1,8 @@
 import type { Policy, Type } from "@moniq/core";
 
-import type { fileKind, filePolicySchema } from "./schema.js";
-
-export type FileKind = Type.Static<typeof fileKind>;
+import type { filePolicySchema } from "./schema.js";
 
 export type FilePolicy = Policy & Type.Static<typeof filePolicySchema>;
-
-export type FixAction = "create" | "delete" | "mkdir" | "write";
 
 declare module "@udohjeremiah/moniq" {
   interface UserConfig {
@@ -22,12 +18,12 @@ declare module "@udohjeremiah/moniq" {
 }
 
 declare module "@moniq/core" {
-  interface Diagnostic {
+  interface DiagnosticMetadata {
+    /** Actual value observed for mismatch-style violations. */
     actual?: string;
+
+    /** Expected value for mismatch-style violations. */
     expected?: string;
-    file?: string;
-    fix?: string;
-    fixAction?: FixAction;
   }
 
   interface MoniqPluginPolicies {

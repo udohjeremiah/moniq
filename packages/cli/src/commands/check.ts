@@ -1,9 +1,7 @@
 import { discoverWorkspace, findWorkspaceRoot, loadConfig } from "@moniq/core";
 import {
-  applyFixes,
   createRegistry,
   type Diagnostic,
-  type FixSummary,
   type Report,
   resolveAll,
 } from "@moniq/core";
@@ -39,16 +37,13 @@ export async function check(options: CheckOptions) {
   }
 
   const registry = createRegistry(config);
-  const report = await resolveAll(registry.domains, config, root, packages);
-
-  let fixSummary: FixSummary | undefined;
-
-  if (options.fix) {
-    fixSummary = await applyFixes(report.results, {
-      isDryRun: options.isDryRun,
-      root,
-    });
-  }
+  const { fixSummary, report } = await resolveAll(
+    registry.domains,
+    config,
+    root,
+    packages,
+    { fix: options.fix, isDryRun: options.isDryRun },
+  );
 
   const finalReport =
     fixSummary !== undefined &&

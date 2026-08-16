@@ -40,9 +40,7 @@ function buildSummary(diagnostics: Diagnostic[], isDryRun?: boolean) {
 
   if (isDryRun) {
     const fixableCount = diagnostics.filter(
-      (d) =>
-        (d.fix !== undefined || d.fixAction !== undefined) &&
-        d.severity !== "off",
+      (d) => d.fix !== undefined && d.severity !== "off",
     ).length;
     if (fixableCount > 0) {
       const fixSuffix = fixableCount === 1 ? "" : "es";
@@ -51,22 +49,6 @@ function buildSummary(diagnostics: Diagnostic[], isDryRun?: boolean) {
   }
 
   return line;
-}
-
-function describeFix(d: Diagnostic) {
-  if (d.fixAction === "delete") {
-    return `delete ${d.file ?? ""}`;
-  }
-  if (d.fixAction === "create") {
-    return `create ${d.file ?? ""}`;
-  }
-  if (d.fixAction === "mkdir") {
-    return `create directory ${d.file ?? ""}`;
-  }
-  if (d.fixAction === "write") {
-    return `write ${d.file ?? ""}`;
-  }
-  return d.fix ?? "";
 }
 
 function formatPretty(diagnostics: Diagnostic[], isDryRun?: boolean) {
@@ -85,7 +67,7 @@ function formatPretty(diagnostics: Diagnostic[], isDryRun?: boolean) {
     );
 
     for (const d of diags) {
-      pushDiagnostic(lines, d, isDryRun);
+      pushDiagnostic(lines, d);
     }
   }
 
@@ -114,35 +96,31 @@ function padSeverity(label: string) {
   return padLength > 0 ? label + " ".repeat(padLength) : label;
 }
 
-function pushDiagnostic(lines: string[], d: Diagnostic, isDryRun?: boolean) {
+function pushDiagnostic(lines: string[], d: Diagnostic) {
   const icon = severityIcon(d.severity);
   const badge = severityBadge(d.severity);
   const indent = INFO_INDENT;
 
   lines.push(`  ${icon} ${badge}  ${d.message}  ${styleText("dim", d.ruleId)}`);
 
-  if (d.file) {
-    lines.push(`${indent}${styleText("dim", d.file)}`);
-  }
+  const expected =
+    typeof d.metadata?.expected === "string" ? d.metadata.expected : undefined;
+  const actual =
+    typeof d.metadata?.actual === "string" ? d.metadata.actual : undefined;
 
-  if (d.expected && d.actual) {
+  if (expected && actual) {
     lines.push(
-      `${indent}${styleText("dim", "Expected:")} ${styleText("magentaBright", d.expected)}`,
-      `${indent}${styleText("dim", "Actual:")}   ${styleText("red", d.actual)}`,
+      `${indent}${styleText("dim", "Expected:")} ${styleText("magentaBright", expected)}`,
+      `${indent}${styleText("dim", "Actual:")}   ${styleText("red", actual)}`,
     );
-  } else if (d.expected) {
+  } else if (expected) {
     lines.push(
-      `${indent}${styleText("dim", "Expected:")} ${styleText("magentaBright", d.expected)}`,
+      `${indent}${styleText("dim", "Expected:")} ${styleText("magentaBright", expected)}`,
     );
-  } else if (d.actual) {
+  } else if (actual) {
     lines.push(
-      `${indent}${styleText("dim", "Actual:")}   ${styleText("red", d.actual)}`,
+      `${indent}${styleText("dim", "Actual:")}   ${styleText("red", actual)}`,
     );
-  }
-
-  if (d.fixAction !== undefined || d.fix) {
-    const label = styleText("dim", isDryRun ? "Would fix:" : "Fix:");
-    lines.push(`${indent}${label} ${describeFix(d)}`);
   }
 }
 

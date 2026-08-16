@@ -159,9 +159,6 @@ The output contains tool metadata, a run summary, and the list of diagnostics.
 }
 ```
 
-Diagnostics may also include fields such as `expected`, `actual`, `fix`, `file`,
-and other policy-specific properties.
-
 ## SARIF Output
 
 Moniq can also produce [SARIF 2.1.0](https://sarifweb.azurewebsites.net) output
