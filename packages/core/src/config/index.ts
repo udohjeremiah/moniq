@@ -1,4 +1,5 @@
 import path from "node:path";
+import { pathToFileURL } from "node:url";
 import { Type } from "typebox";
 import { Parse } from "typebox/value";
 
@@ -45,12 +46,12 @@ export function defineConfig(config: UserConfig): UserConfig {
 
 export async function loadConfig(root: string) {
   const CONFIG_FILENAMES = [
-    "moniq.config.ts",
     "moniq.config.js",
-    "moniq.config.mjs",
     "moniq.config.cjs",
-    "moniq.config.mts",
+    "moniq.config.mjs",
+    "moniq.config.ts",
     "moniq.config.cts",
+    "moniq.config.mts",
   ];
 
   const { readdir } = await import("node:fs/promises");
@@ -72,7 +73,10 @@ export async function loadConfig(root: string) {
   // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
   const configPath = path.join(root, found[0]!);
 
-  const module_ = (await import(configPath)) as Record<string, unknown>;
+  const module_ = (await import(pathToFileURL(configPath).href)) as Record<
+    string,
+    unknown
+  >;
   const raw = module_["default"] ?? module_;
 
   return Parse(ConfigType, raw) as UserConfig;

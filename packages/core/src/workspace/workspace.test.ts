@@ -1,4 +1,4 @@
-import { mkdtemp, rm } from "node:fs/promises";
+import { mkdir, mkdtemp, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
@@ -6,6 +6,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import {
   detectPackageManager,
   discoverWorkspace,
+  findWorkspaceRoot,
   hasWorkspaceConfig,
 } from "./workspace.js";
 
@@ -50,33 +51,59 @@ describe("discoverWorkspace", () => {
     process.env["npm_config_user_agent"] = "pnpm/";
     vi.mocked(execFileSync).mockReturnValue(
       JSON.stringify([
-        { name: "moniq", path: "/repo", private: true },
-        { name: "@moniq/cli", path: "/repo/packages/cli", private: true },
-        { name: "@moniq/core", path: "/repo/packages/core", private: true },
+        { name: "moniq", path: path.resolve("/repo"), private: true },
+        {
+          name: "@moniq/cli",
+          path: path.resolve("/repo", "packages/cli"),
+          private: true,
+        },
+        {
+          name: "@moniq/core",
+          path: path.resolve("/repo", "packages/core"),
+          private: true,
+        },
       ]),
     );
 
     const result = await discoverWorkspace("/repo");
 
     expect(result).toEqual([
-      { path: "/repo" },
-      { path: "/repo/packages/cli" },
-      { path: "/repo/packages/core" },
+      { path: path.resolve("/repo") },
+      { path: path.resolve("/repo", "packages/cli") },
+      { path: path.resolve("/repo", "packages/core") },
     ]);
   });
 
-  it("calls pnpm ls without a shell on POSIX", async () => {
-    process.env["npm_config_user_agent"] = "pnpm/";
-    vi.mocked(execFileSync).mockReturnValue("[]");
+  it.skipIf(process.platform === "win32")(
+    "calls pnpm ls without a shell on POSIX",
+    async () => {
+      process.env["npm_config_user_agent"] = "pnpm/";
+      vi.mocked(execFileSync).mockReturnValue("[]");
 
-    await discoverWorkspace("/some/project");
+      await discoverWorkspace("/some/project");
 
-    expect(execFileSync).toHaveBeenCalledWith(
-      expect.any(String),
-      ["ls", "-r", "--depth", "-1", "--json"],
-      { cwd: "/some/project", encoding: "utf8" },
-    );
-  });
+      expect(execFileSync).toHaveBeenCalledWith(
+        expect.any(String),
+        ["ls", "-r", "--depth", "-1", "--json"],
+        { cwd: "/some/project", encoding: "utf8" },
+      );
+    },
+  );
+
+  it.skipIf(process.platform !== "win32")(
+    "calls pnpm ls via the shell on Windows",
+    async () => {
+      process.env["npm_config_user_agent"] = "pnpm/";
+      vi.mocked(execFileSync).mockReturnValue("[]");
+
+      await discoverWorkspace("/some/project");
+
+      expect(execFileSync).toHaveBeenCalledWith(
+        "pnpm ls -r --depth -1 --json",
+        { cwd: path.resolve("/some/project"), encoding: "utf8", shell: true },
+      );
+    },
+  );
 
   it("discovers yarn workspaces and includes the root first", async () => {
     process.env["npm_config_user_agent"] = "yarn/";
@@ -90,32 +117,51 @@ describe("discoverWorkspace", () => {
     const result = await discoverWorkspace("/repo");
 
     expect(result).toEqual([
-      { path: "/repo" },
+      { path: path.resolve("/repo") },
       { path: path.resolve("/repo", "packages/cli") },
       { path: path.resolve("/repo", "packages/core") },
     ]);
   });
 
-  it("calls yarn workspaces list with the root directory", async () => {
-    process.env["npm_config_user_agent"] = "yarn/";
-    vi.mocked(execFileSync).mockReturnValue("");
+  it.skipIf(process.platform === "win32")(
+    "calls yarn workspaces list without a shell on POSIX",
+    async () => {
+      process.env["npm_config_user_agent"] = "yarn/";
+      vi.mocked(execFileSync).mockReturnValue("");
 
-    await discoverWorkspace("/some/project");
+      await discoverWorkspace("/some/project");
 
-    expect(execFileSync).toHaveBeenCalledWith(
-      expect.any(String),
-      ["workspaces", "list", "--json"],
-      { cwd: "/some/project", encoding: "utf8" },
-    );
-  });
+      expect(execFileSync).toHaveBeenCalledWith(
+        expect.any(String),
+        ["workspaces", "list", "--json"],
+        { cwd: "/some/project", encoding: "utf8" },
+      );
+    },
+  );
+
+  it.skipIf(process.platform !== "win32")(
+    "calls yarn workspaces list via the shell on Windows",
+    async () => {
+      process.env["npm_config_user_agent"] = "yarn/";
+      vi.mocked(execFileSync).mockReturnValue("");
+
+      await discoverWorkspace("/some/project");
+
+      expect(execFileSync).toHaveBeenCalledWith("yarn workspaces list --json", {
+        cwd: path.resolve("/some/project"),
+        encoding: "utf8",
+        shell: true,
+      });
+    },
+  );
 
   it("discovers npm workspaces and includes the root first", async () => {
     process.env["npm_config_user_agent"] = "npm/";
     vi.mocked(execFileSync).mockReturnValue(
       JSON.stringify({
         dependencies: {
-          "@moniq/cli": { path: "/repo/packages/cli" },
-          "@moniq/core": { path: "/repo/packages/core" },
+          "@moniq/cli": { path: path.resolve("/repo", "packages/cli") },
+          "@moniq/core": { path: path.resolve("/repo", "packages/core") },
         },
         name: "root",
       }),
@@ -124,9 +170,9 @@ describe("discoverWorkspace", () => {
     const result = await discoverWorkspace("/repo");
 
     expect(result).toEqual([
-      { path: "/repo" },
-      { path: "/repo/packages/cli" },
-      { path: "/repo/packages/core" },
+      { path: path.resolve("/repo") },
+      { path: path.resolve("/repo", "packages/cli") },
+      { path: path.resolve("/repo", "packages/core") },
     ]);
   });
 
@@ -149,18 +195,40 @@ describe("discoverWorkspace", () => {
     ]);
   });
 
-  it("calls npm ls with the root directory", async () => {
-    process.env["npm_config_user_agent"] = "npm/";
-    vi.mocked(execFileSync).mockReturnValue("{}");
+  it.skipIf(process.platform === "win32")(
+    "calls npm ls without a shell on POSIX",
+    async () => {
+      process.env["npm_config_user_agent"] = "npm/";
+      vi.mocked(execFileSync).mockReturnValue("{}");
 
-    await discoverWorkspace("/some/project");
+      await discoverWorkspace("/some/project");
 
-    expect(execFileSync).toHaveBeenCalledWith(
-      expect.any(String),
-      ["ls", "--workspaces", "--all", "--json", "--depth", "0"],
-      { cwd: "/some/project", encoding: "utf8" },
-    );
-  });
+      expect(execFileSync).toHaveBeenCalledWith(
+        expect.any(String),
+        ["ls", "--workspaces", "--all", "--json", "--depth", "0"],
+        { cwd: "/some/project", encoding: "utf8" },
+      );
+    },
+  );
+
+  it.skipIf(process.platform !== "win32")(
+    "calls npm ls via the shell on Windows",
+    async () => {
+      process.env["npm_config_user_agent"] = "npm/";
+      vi.mocked(execFileSync).mockReturnValue("{}");
+
+      await discoverWorkspace("/some/project");
+
+      expect(execFileSync).toHaveBeenCalledWith(
+        "npm ls --workspaces --all --json --depth 0",
+        {
+          cwd: path.resolve("/some/project"),
+          encoding: "utf8",
+          shell: true,
+        },
+      );
+    },
+  );
 
   it("returns the root when no workspace members exist", async () => {
     process.env["npm_config_user_agent"] = "pnpm/";
@@ -168,7 +236,7 @@ describe("discoverWorkspace", () => {
 
     const result = await discoverWorkspace("/empty");
 
-    expect(result).toEqual([{ path: "/empty" }]);
+    expect(result).toEqual([{ path: path.resolve("/empty") }]);
   });
 });
 
@@ -311,6 +379,69 @@ describe("hasWorkspaceConfig", () => {
     const directory = await createFixture();
 
     await expect(hasWorkspaceConfig(directory)).resolves.toBe(false);
+
+    await rm(directory, { recursive: true });
+  });
+});
+
+describe("findWorkspaceRoot", () => {
+  it("returns the directory containing a workspace marker", async () => {
+    const directory = await createFixture();
+    await writeConfig(directory, "pnpm-lock.yaml", "");
+
+    await expect(findWorkspaceRoot(directory)).resolves.toBe(
+      path.resolve(directory),
+    );
+
+    await rm(directory, { recursive: true });
+  });
+
+  it("walks up to the nearest workspace root from a nested directory", async () => {
+    const root = await createFixture();
+    await writeConfig(root, "pnpm-lock.yaml", "");
+    const nested = path.join(root, "packages", "core");
+    // eslint-disable-next-line security/detect-non-literal-fs-filename
+    await mkdir(nested, { recursive: true });
+
+    await expect(findWorkspaceRoot(nested)).resolves.toBe(path.resolve(root));
+
+    await rm(root, { recursive: true });
+  });
+
+  it("returns the directory when package.json declares workspaces", async () => {
+    const directory = await createFixture();
+    await writeConfig(
+      directory,
+      "package.json",
+      JSON.stringify({ name: "root", workspaces: ["packages/*"] }),
+    );
+
+    await expect(findWorkspaceRoot(directory)).resolves.toBe(
+      path.resolve(directory),
+    );
+
+    await rm(directory, { recursive: true });
+  });
+
+  it("walks up past a package.json without workspaces", async () => {
+    const root = await createFixture();
+    await writeConfig(root, "pnpm-lock.yaml", "");
+    const nested = path.join(root, "packages", "core");
+    // eslint-disable-next-line security/detect-non-literal-fs-filename
+    await mkdir(nested, { recursive: true });
+    await writeConfig(nested, "package.json", JSON.stringify({ name: "core" }));
+
+    await expect(findWorkspaceRoot(nested)).resolves.toBe(path.resolve(root));
+
+    await rm(root, { recursive: true });
+  });
+
+  it("throws when no workspace root can be found", async () => {
+    const directory = await createFixture();
+
+    await expect(findWorkspaceRoot(directory)).rejects.toThrow(
+      "Could not find workspace root",
+    );
 
     await rm(directory, { recursive: true });
   });
