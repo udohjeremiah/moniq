@@ -1,5 +1,13 @@
 # moniq
 
+## 0.10.1
+
+### Patch Changes
+
+- b3bdf0b: Fix `moniq check` failing with `ERR_UNSUPPORTED_ESM_URL_SCHEME` on Windows when loading `moniq.config.*`.
+
+  Normalize file policy subject paths to forward slashes so diagnostics render clean relative paths on Windows.
+
 ## 0.10.0
 
 ### Minor Changes
