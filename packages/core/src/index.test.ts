@@ -1,3 +1,4 @@
+import path from "node:path";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { discoverWorkspace } from "./index.js";
@@ -21,18 +22,26 @@ describe("discoverWorkspace", () => {
     process.env["npm_config_user_agent"] = "pnpm/";
     vi.mocked(execFileSync).mockReturnValue(
       JSON.stringify([
-        { name: "moniq", path: "/repo", private: true },
-        { name: "@moniq/cli", path: "/repo/packages/cli", private: true },
-        { name: "@moniq/core", path: "/repo/packages/core", private: true },
+        { name: "moniq", path: path.resolve("/repo"), private: true },
+        {
+          name: "@moniq/cli",
+          path: path.resolve("/repo", "packages/cli"),
+          private: true,
+        },
+        {
+          name: "@moniq/core",
+          path: path.resolve("/repo", "packages/core"),
+          private: true,
+        },
       ]),
     );
 
     const result = await discoverWorkspace("/repo");
 
     expect(result).toEqual([
-      { path: "/repo" },
-      { path: "/repo/packages/cli" },
-      { path: "/repo/packages/core" },
+      { path: path.resolve("/repo") },
+      { path: path.resolve("/repo", "packages/cli") },
+      { path: path.resolve("/repo", "packages/core") },
     ]);
   });
 
@@ -41,8 +50,8 @@ describe("discoverWorkspace", () => {
     vi.mocked(execFileSync).mockReturnValue(
       JSON.stringify({
         dependencies: {
-          "@moniq/cli": { path: "/repo/packages/cli" },
-          "@moniq/core": { path: "/repo/packages/core" },
+          "@moniq/cli": { path: path.resolve("/repo", "packages/cli") },
+          "@moniq/core": { path: path.resolve("/repo", "packages/core") },
         },
         name: "root",
       }),
@@ -51,9 +60,9 @@ describe("discoverWorkspace", () => {
     const result = await discoverWorkspace("/repo");
 
     expect(result).toEqual([
-      { path: "/repo" },
-      { path: "/repo/packages/cli" },
-      { path: "/repo/packages/core" },
+      { path: path.resolve("/repo") },
+      { path: path.resolve("/repo", "packages/cli") },
+      { path: path.resolve("/repo", "packages/core") },
     ]);
   });
 
@@ -63,6 +72,6 @@ describe("discoverWorkspace", () => {
 
     const result = await discoverWorkspace("/empty");
 
-    expect(result).toEqual([{ path: "/empty" }]);
+    expect(result).toEqual([{ path: path.resolve("/empty") }]);
   });
 });

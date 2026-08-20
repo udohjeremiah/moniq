@@ -1,6 +1,7 @@
 import type { Package, UserConfig } from "@moniq/core";
 
 import { createRegistry, registerPluginPack, resolveAll } from "@moniq/core";
+import { mkdtempSync, rmSync, symlinkSync } from "node:fs";
 import { mkdtemp, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
@@ -9,6 +10,21 @@ import { describe, expect, it } from "vitest";
 import { filesPlugin } from "./index.js";
 
 registerPluginPack(filesPlugin);
+
+function canCreateSymlinks(): boolean {
+  const directory = mkdtempSync(path.join(tmpdir(), "moniq-symlink-probe-"));
+  try {
+    // eslint-disable-next-line security/detect-non-literal-fs-filename
+    symlinkSync("target", path.join(directory, "link"));
+    return true;
+  } catch {
+    return false;
+  } finally {
+    rmSync(directory, { force: true, recursive: true });
+  }
+}
+
+const areSymlinksSupported = canCreateSymlinks();
 
 async function createDirectory(root: string, relativePath: string) {
   const { mkdir } = await import("node:fs/promises");
@@ -483,85 +499,94 @@ describe("files", () => {
     await rm(root, { recursive: true });
   });
 
-  it("returns no diagnostic when required symlink exists", async () => {
-    const root = await createTemporaryDirectory();
-    await createFixture(root, {
-      ".": { name: "root" },
-    });
-    await createDirectory(root, "docs");
-    const { symlink } = await import("node:fs/promises");
-    await symlink("target", path.join(root, "docs/assets"));
+  it.skipIf(!areSymlinksSupported)(
+    "returns no diagnostic when required symlink exists",
+    async () => {
+      const root = await createTemporaryDirectory();
+      await createFixture(root, {
+        ".": { name: "root" },
+      });
+      await createDirectory(root, "docs");
+      const { symlink } = await import("node:fs/promises");
+      await symlink("target", path.join(root, "docs/assets"));
 
-    const config: UserConfig = {
-      files: {
-        "docs/assets": { kind: "symlink", presence: "required" },
-      },
-    };
+      const config: UserConfig = {
+        files: {
+          "docs/assets": { kind: "symlink", presence: "required" },
+        },
+      };
 
-    const report = await resolve(config, root, rootPack(root, "."));
-    expect(report.results).toEqual([]);
-    await rm(root, { recursive: true });
-  });
+      const report = await resolve(config, root, rootPack(root, "."));
+      expect(report.results).toEqual([]);
+      await rm(root, { recursive: true });
+    },
+  );
 
-  it("returns diagnostic when a symlink does not match kind file", async () => {
-    const root = await createTemporaryDirectory();
-    await createFixture(root, {
-      ".": { name: "root" },
-    });
-    const { symlink } = await import("node:fs/promises");
-    await symlink("target", path.join(root, "link"));
+  it.skipIf(!areSymlinksSupported)(
+    "returns diagnostic when a symlink does not match kind file",
+    async () => {
+      const root = await createTemporaryDirectory();
+      await createFixture(root, {
+        ".": { name: "root" },
+      });
+      const { symlink } = await import("node:fs/promises");
+      await symlink("target", path.join(root, "link"));
 
-    const config: UserConfig = {
-      files: {
-        link: { kind: "file", presence: "required" },
-      },
-    };
+      const config: UserConfig = {
+        files: {
+          link: { kind: "file", presence: "required" },
+        },
+      };
 
-    const report = await resolve(config, root, rootPack(root, "."));
-    expect(report.results).toEqual([
-      {
+      const report = await resolve(config, root, rootPack(root, "."));
+      expect(report.results).toEqual([
+        {
+          domain: "files",
+          message: `Expected a file but found a symbolic link at "link"`,
+          packageName: "root",
+          packagePath: path.join(root, "."),
+          plugin: "files",
+          ruleId: "files/kind",
+          ruleName: "Unexpected kind",
+          severity: "error",
+        },
+      ]);
+      await rm(root, { recursive: true });
+    },
+  );
+
+  it.skipIf(!areSymlinksSupported)(
+    "returns diagnostic for forbidden symlink",
+    async () => {
+      const root = await createTemporaryDirectory();
+      await createFixture(root, {
+        ".": { name: "root" },
+      });
+      const { symlink } = await import("node:fs/promises");
+      await symlink("target", path.join(root, "link"));
+
+      const config: UserConfig = {
+        files: {
+          link: { presence: "forbidden" },
+        },
+      };
+
+      const report = await resolve(config, root, rootPack(root, "."));
+      expect(report.results).toHaveLength(1);
+      expect(report.results[0]).toMatchObject({
         domain: "files",
-        message: `Expected a file but found a symbolic link at "link"`,
+        message: 'Unexpected symbolic link "link"',
         packageName: "root",
         packagePath: path.join(root, "."),
         plugin: "files",
-        ruleId: "files/kind",
-        ruleName: "Unexpected kind",
+        ruleId: "files/unexpected",
+        ruleName: "Unexpected symbolic link",
         severity: "error",
-      },
-    ]);
-    await rm(root, { recursive: true });
-  });
-
-  it("returns diagnostic for forbidden symlink", async () => {
-    const root = await createTemporaryDirectory();
-    await createFixture(root, {
-      ".": { name: "root" },
-    });
-    const { symlink } = await import("node:fs/promises");
-    await symlink("target", path.join(root, "link"));
-
-    const config: UserConfig = {
-      files: {
-        link: { presence: "forbidden" },
-      },
-    };
-
-    const report = await resolve(config, root, rootPack(root, "."));
-    expect(report.results).toHaveLength(1);
-    expect(report.results[0]).toMatchObject({
-      domain: "files",
-      message: 'Unexpected symbolic link "link"',
-      packageName: "root",
-      packagePath: path.join(root, "."),
-      plugin: "files",
-      ruleId: "files/unexpected",
-      ruleName: "Unexpected symbolic link",
-      severity: "error",
-    });
-    expect(report.results[0]?.fix).toBeTypeOf("function");
-    await rm(root, { recursive: true });
-  });
+      });
+      expect(report.results[0]?.fix).toBeTypeOf("function");
+      await rm(root, { recursive: true });
+    },
+  );
 
   it("does not set fix for missing required symlink", async () => {
     const root = await createTemporaryDirectory();
@@ -580,24 +605,27 @@ describe("files", () => {
     await rm(root, { recursive: true });
   });
 
-  it("sets delete fix for forbidden symlink when autofix is true", async () => {
-    const root = await createTemporaryDirectory();
-    await createFixture(root, {
-      ".": { name: "root" },
-    });
-    const { symlink } = await import("node:fs/promises");
-    await symlink("target", path.join(root, "link"));
+  it.skipIf(!areSymlinksSupported)(
+    "sets delete fix for forbidden symlink when autofix is true",
+    async () => {
+      const root = await createTemporaryDirectory();
+      await createFixture(root, {
+        ".": { name: "root" },
+      });
+      const { symlink } = await import("node:fs/promises");
+      await symlink("target", path.join(root, "link"));
 
-    const config: UserConfig = {
-      files: {
-        link: { autofix: true, presence: "forbidden" },
-      },
-    };
+      const config: UserConfig = {
+        files: {
+          link: { autofix: true, presence: "forbidden" },
+        },
+      };
 
-    const report = await resolve(config, root, rootPack(root, "."));
-    expect(report.results[0]?.fix).toBeTypeOf("function");
-    await rm(root, { recursive: true });
-  });
+      const report = await resolve(config, root, rootPack(root, "."));
+      expect(report.results[0]?.fix).toBeTypeOf("function");
+      await rm(root, { recursive: true });
+    },
+  );
 
   it("respects severity: off (skips policy)", async () => {
     const root = await createTemporaryDirectory();
