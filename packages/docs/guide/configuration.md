@@ -6,12 +6,12 @@ Moniq loads a single `moniq.config.*` file from the workspace root.
 
 Supported extensions:
 
-- `ts`
 - `js`
-- `mts`
-- `cts`
-- `mjs`
 - `cjs`
+- `mjs`
+- `ts`
+- `cts`
+- `mts`
 
 ## Basic Structure
 
