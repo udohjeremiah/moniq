@@ -39,7 +39,9 @@ export function filesSubjects(
         relativePath: packageRelativePath,
         value: {
           absolutePath: path.join(package_.path, relativePath),
-          relativePath: path.join(packageRelativePath, relativePath),
+          relativePath: path
+            .join(packageRelativePath, relativePath)
+            .replaceAll(path.sep, "/"),
         } satisfies FileTarget,
       });
     }
