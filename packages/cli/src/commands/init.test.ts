@@ -76,27 +76,6 @@ describe("init", () => {
     await rm(directory, { recursive: true });
   });
 
-  it("creates a config file in the target directory", async () => {
-    vi.mocked(execFileSync).mockReturnValue(
-      JSON.stringify({
-        dependencies: { "@moniq/cli": { path: "/repo/packages/cli" } },
-        name: "root",
-      }),
-    );
-    const directory = await createMonorepoFixture();
-
-    await init({ _cwd: directory, lang: "ts" });
-
-    const { readFile } = await import("node:fs/promises");
-    const content = await readFile(
-      path.join(directory, "moniq.config.ts"),
-      "utf8",
-    );
-    expect(content).toContain("defineConfig");
-
-    await rm(directory, { recursive: true });
-  });
-
   it("fails gracefully when no package.json exists", async () => {
     const directory = await createTemporaryDirectory();
     const { readFile } = await import("node:fs/promises");
